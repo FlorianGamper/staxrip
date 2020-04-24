@@ -3370,6 +3370,16 @@ Public Class MainForm
             b.Text = "Enable GPU Plugins"
             b.Field = NameOf(s.IsGPUEnabled)
 
+            Dim fileNameHandling = ui.CreateFlowPage("FileName Handling", True)
+
+            b = ui.AddBool
+            b.Text = "Restrict File Name Length (ex. ecrypt.fs)"
+            b.Field = NameOf(s.IsFileNameLengthRestricted)
+
+            n = ui.AddNum
+            n.Text = "Max Filename Length"
+            n.Field = NameOf(s.MaxBatchFileNameLength)
+
             Dim videoPage = ui.CreateFlowPage("Video", True)
 
             b = ui.AddBool
@@ -4876,6 +4886,13 @@ Public Class MainForm
                             batchProject.BatchMode = True
                             batchProject.SourceFiles = {i}.ToList
                             Dim jobPath = batchFolder + i.Dir.Replace("\", "-").Replace(":", "-") + " " + p.TemplateName + " - " + i.FileName
+                            If (s.IsFileNameLengthRestricted And jobPath.Length > s.MaxBatchFileNameLength) Then
+                                Dim shortenedFileName = jobPath.GetHashCode().ToString() + "-" + i.FileName()
+                                If (shortenedFileName.Length > s.MaxBatchFileNameLength) Then
+                                    shortenedFileName = shortenedFileName.Substring(0, s.MaxBatchFileNameLength)
+                                End If
+                                jobPath = batchFolder + shortenedFileName
+                            End If
                             SafeSerialization.Serialize(batchProject, jobPath)
                             Job.AddJob(jobPath)
                         Next

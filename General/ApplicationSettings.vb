@@ -73,6 +73,10 @@ Public Class ApplicationSettings
     REM Disable GPU
     Public IsGPUEnabled As Boolean = True
 
+    REM Some filesystems do have length restrictions (ecryptfs)
+    Public IsFileNameLengthRestricted As Boolean = False
+    Public MaxBatchFileNameLength As Integer = 130
+
     Property WasUpdated As Boolean Implements ISafeSerialization.WasUpdated
 
     ReadOnly Property VersionsProperty() As Dictionary(Of String, Integer) Implements ISafeSerialization.Versions
