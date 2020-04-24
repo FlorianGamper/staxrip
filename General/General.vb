@@ -32,14 +32,12 @@ Public Class Folder
     Shared ReadOnly Property Startup() As String
         Get
             If StartupValue Is Nothing Then
-                Dim buffer As New StringBuilder(500)
-                QueryFullProcessImageName(Process.GetCurrentProcess.Handle, 0, buffer, buffer.Capacity)
-                StartupValue = buffer.ToString.Dir
+                StartupValue = Application.StartupPath.FixDir
             End If
-
             Return StartupValue
         End Get
     End Property
+
 
     <DllImport("kernel32.dll")>
     Private Shared Function QueryFullProcessImageName(
