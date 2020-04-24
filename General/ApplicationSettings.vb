@@ -70,6 +70,9 @@ Public Class ApplicationSettings
     Public WindowPositionsRemembered As String()
     Public WriteDebugLog As Boolean
 
+    REM Disable GPU
+    Public IsGPUEnabled As Boolean = True
+
     Property WasUpdated As Boolean Implements ISafeSerialization.WasUpdated
 
     ReadOnly Property VersionsProperty() As Dictionary(Of String, Integer) Implements ISafeSerialization.Versions

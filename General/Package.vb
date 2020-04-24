@@ -29,6 +29,7 @@ Public Class Package
     Property Version As String
     Property VersionDate As Date
     Property WebURL As String
+    Property IsGPUNeeded As Boolean
 
     Overridable Property FixedDir As String
 
@@ -70,6 +71,7 @@ Public Class Package
         .WebURL = "http://rationalqm.us/dgdecnv/dgdecnv.html",
         .HelpFilename = "DGIndexNVManual.html",
         .IsGUI = True,
+        .IsGPUNeeded = True,
         .IsIncluded = False,
         .HintDirFunc = Function() DGDecodeNV.GetStoredPath.Dir,
         .RequiredFunc = Function() CommandLineDemuxer.IsActive("DGIndexNV")})
@@ -448,6 +450,7 @@ Public Class Package
         .Name = "NVEnc",
         .Filename = "NVEncC64.exe",
         .Location = "Encoders\NVEnc",
+        .IsGPUNeeded = True,
         .HelpSwitch = "-h",
         .WebURL = "http://github.com/rigaya/NVEnc",
         .HelpURL = "https://github.com/rigaya/NVEnc/blob/master/NVEncC_Options.en.md",
@@ -458,6 +461,7 @@ Public Class Package
         .Name = "QSVEnc",
         .Filename = "QSVEncC64.exe",
         .Location = "Encoders\QSVEnc",
+        .IsGPUNeeded = True,
         .Description = "Intel hardware video encoder.",
         .HelpFilename = "QSVEnc Help.txt",
         .WebURL = "http://github.com/rigaya/QSVEnc",
@@ -468,6 +472,7 @@ Public Class Package
         .Name = "VCEEnc",
         .Filename = "VCEEncC64.exe",
         .Location = "Encoders\VCEEnc",
+        .IsGPUNeeded = True,
         .Description = "AMD hardware video encoder.",
         .HelpFilename = "VCEEnc Help.txt",
         .HelpSwitch = "-h",
@@ -480,6 +485,7 @@ Public Class Package
         .Description = "Shareware source filter with NVIDIA hardware acceleration and reliable transport stream support.",
         .Location = "Support\DGIndexNV",
         .HelpFilename = "DGDecodeNVManual.html",
+        .IsGPUNeeded = True,
         .IsIncluded = False,
         .HintDirFunc = Function() DGIndexNV.GetStoredPath.Dir,
         .RequiredFunc = Function() p.Script.Filters(0).Script.StartsWith("DGSource("),
@@ -693,13 +699,16 @@ Public Class Package
     Shared Property FFT3DGPU As Package = Add(New PluginPackage With {
         .Name = "FFT3DGPU",
         .Filename = "FFT3dGPU.dll",
+        .IsGPUNeeded = True,
         .Description = "Similar algorithm to FFT3DFilter, but uses graphics hardware for increased speed.",
         .HelpFilename = "Readme.txt",
         .AvsFilterNames = {"FFT3DGPU"},
         .AvsFiltersFunc = Function() {New VideoFilter("Noise", "FFT3DFilter | FFT3DGPU", "FFT3DGPU(sigma=1.5, bt=5, bw=32, bh=32, ow=16, oh=16, sharpen=0.4, NVPerf=$select:msg:Enable Nvidia Function;True;False$)")}})
 
     Shared Function Add(pack As Package) As Package
-        Items(pack.ID) = pack
+        If s.IsGPUEnabled Or Not pack.IsGPUNeeded Then
+            Items(pack.ID) = pack
+        End If
         Return pack
     End Function
 
@@ -708,6 +717,7 @@ Public Class Package
             .Name = "KNLMeansCL",
             .Filename = "KNLMeansCL.dll",
             .WebURL = "http://github.com/Khanattila/KNLMeansCL",
+            .IsGPUNeeded = True,
             .Description = "KNLMeansCL is an optimized pixelwise OpenCL implementation of the Non-local means denoising algorithm. Every pixel is restored by the weighted average of all pixels in its search window. The level of averaging is determined by the filtering parameter h.",
             .VSFilterNames = {"knlm.KNLMeansCL"},
             .AvsFilterNames = {"KNLMeansCL"},
@@ -1428,6 +1438,7 @@ Public Class Package
         Add(New PluginPackage With {
             .Name = "nnedi3cl",
             .Filename = "NNEDI3CL.dll",
+            .IsGPUNeeded = True,
             .WebURL = "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-NNEDI3CL",
             .Location = "Plugins\VS\nnedi3",
             .Description = "nnedi3 is an intra-field only deinterlacer. It takes a frame, throws away one field, and then interpolates the missing pixels using only information from the remaining field. It is also good for enlarging images by powers of two.",
@@ -1436,6 +1447,7 @@ Public Class Package
         Add(New PluginPackage With {
             .Name = "EEDI3m",
             .Filename = "EEDI3m.dll",
+            .IsGPUNeeded = True,
             .WebURL = "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3",
             .Description = "EEDI3 works by finding the best non-decreasing (non-crossing) warping between two lines by minimizing a cost functional.",
             .VSFilterNames = {"eedi3m.EEDI3"}})

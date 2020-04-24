@@ -3366,6 +3366,10 @@ Public Class MainForm
             b.Text = "Minimize processing dialog to tray"
             b.Field = NameOf(s.MinimizeToTray)
 
+            b = ui.AddBool
+            b.Text = "Enable GPU Plugins"
+            b.Field = NameOf(s.IsGPUEnabled)
+
             Dim videoPage = ui.CreateFlowPage("Video", True)
 
             b = ui.AddBool
