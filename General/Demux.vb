@@ -621,6 +621,7 @@ Public Class mkvDemuxer
         Dim demuxSubtitles = MediaInfo.GetSubtitleCount(proj.SourceFile) > 0
         Dim attachments = GetAttachments(stdout)
         Dim demuxChapters = ChaptersDemuxing
+        Dim demuxVideo = VideoDemuxing
 
         If Not proj.NoDialogs AndAlso Not proj.BatchMode AndAlso
             ((demuxAudio AndAlso proj.DemuxAudio = DemuxMode.Dialog) OrElse
@@ -629,7 +630,7 @@ Public Class mkvDemuxer
 
             Using form As New StreamDemuxForm(Me, proj.SourceFile, attachments)
                 If form.ShowDialog() <> DialogResult.OK Then Throw New AbortException
-                VideoDemuxed = form.cbDemuxVideo.Checked
+                demuxVideo = form.cbDemuxVideo.Checked
                 demuxChapters = form.cbDemuxChapters.Checked
                 audioStreams = form.AudioStreams
                 subtitles = form.Subtitles
@@ -644,7 +645,7 @@ Public Class mkvDemuxer
             If subtitles Is Nothing Then subtitles = MediaInfo.GetSubtitles(proj.SourceFile)
         End If
 
-        Demux(proj.SourceFile, audioStreams, subtitles, Nothing, proj, True, VideoDemuxed)
+        Demux(proj.SourceFile, audioStreams, subtitles, Nothing, proj, True, demuxVideo)
 
         If demuxChapters AndAlso stdout.Contains("Chapters: ") Then
             Using proc As New Proc
