@@ -71,6 +71,11 @@ Public Class ProcController
     Private Sub LogHandler()
         Dim log = Proc.Log.ToString
         LogTextBox.Text = log
+        If (log IsNot Nothing And log.Length > 0) Then
+            LogTextBox.SelectionLength = 0
+            LogTextBox.SelectionStart = log.Length() - 1
+            LogTextBox.ScrollToCaret()
+        End If
     End Sub
 
     Private Sub StatusHandler(value As String)
