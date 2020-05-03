@@ -77,6 +77,9 @@ Public Class ApplicationSettings
     Public IsFileNameLengthRestricted As Boolean = False
     Public MaxBatchFileNameLength As Integer = 130
 
+    REM Log Scrolling
+    Public IsLogScrollToBottom As Boolean = True
+
     Property WasUpdated As Boolean Implements ISafeSerialization.WasUpdated
 
     ReadOnly Property VersionsProperty() As Dictionary(Of String, Integer) Implements ISafeSerialization.Versions

@@ -71,7 +71,9 @@ Public Class ProcController
     Private Sub LogHandler()
         Dim log = Proc.Log.ToString
         LogTextBox.Text = log
-        If (log IsNot Nothing And log.Length > 0) Then
+
+        REM Always show the Bottom of the Log
+        If (s.IsLogScrollToBottom And log IsNot Nothing And log.Length > 0) Then
             LogTextBox.SelectionLength = 0
             LogTextBox.SelectionStart = log.Length() - 1
             LogTextBox.ScrollToCaret()

@@ -3370,6 +3370,10 @@ Public Class MainForm
             b.Text = "Enable GPU Plugins"
             b.Field = NameOf(s.IsGPUEnabled)
 
+            b = ui.AddBool
+            b.Text = "Scroll Log Always to the Bottom"
+            b.Field = NameOf(s.IsLogScrollToBottom)
+
             Dim fileNameHandling = ui.CreateFlowPage("FileName Handling", True)
 
             b = ui.AddBool
