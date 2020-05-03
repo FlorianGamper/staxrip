@@ -152,6 +152,10 @@ Public Class GlobalClass
             Log.Save()
 
             g.ArchiveLogFile(Log.GetPath)
+
+            REM Project has to be cleared to free the source file
+            g.MainForm.OpenProject("", False)
+
             g.DeleteTempFiles()
             g.RaiseAppEvent(ApplicationEvent.JobProcessed)
             Job.RemoveJob(jobPath)
