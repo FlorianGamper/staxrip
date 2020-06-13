@@ -53,7 +53,6 @@ Public Class Package
                             g.AddToPath(Package.d2vsource.Directory)
                             g.Execute(D2VWitch.Path)
                         End Sub})
-        .IsGPUNeeded = True,
 
     Shared Property Haali As Package = Add(New Package With {
         .Name = "Haali Splitter",
@@ -517,7 +516,6 @@ Public Class Package
         .HelpSwitch = "-h",
         .WebURL = "http://github.com/rigaya/VCEEnc"})
 
-        .IsGPUNeeded = True,
     Shared Property FFT3DFilter As Package = Add(New PluginPackage With {
         .Name = "FFT3DFilter",
         .Filename = "fft3dfilter.dll",
@@ -748,13 +746,6 @@ Public Class Package
         .AvsFilterNames = {"FFT3DGPU"},
         .AvsFiltersFunc = Function() {New VideoFilter("Noise", "FFT3DFilter | FFT3DGPU", "FFT3DGPU(sigma=1.5, bt=5, bw=32, bh=32, ow=16, oh=16, sharpen=0.4, NVPerf=$select:msg:Enable Nvidia Function;True;False$)")}})
 
-    Shared Function Add(pack As Package) As Package
-        If s.IsGPUEnabled Or Not pack.IsGPUNeeded Then
-            Items(pack.ID) = pack
-        End If
-        Return pack
-    End Function                
-        
     Shared Property MPEG2DecPlus As Package = Add(New PluginPackage With {
         .Name = "MPEG2DecPlus",
         .Filename = "MPEG2DecPlus64.dll",
@@ -1815,9 +1806,10 @@ Public Class Package
                      "The Apps are expected to be located in a directory called 'Apps' in the startup folder besides the StaxRip executable.")
         End Try
     End Sub
-
     Shared Function Add(pack As Package) As Package
-        Items(pack.ID) = pack
+        If s.IsGPUEnabled Or Not pack.IsGPUNeeded Then
+            Items(pack.ID) = pack
+        End If
         Return pack
     End Function
 

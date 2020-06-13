@@ -1,0 +1,17 @@
+﻿
+/bin
+/obj
+/Fonts
+/VideoData
+/packages
+/.vs
+/StaxRip.vbproj.user
+/FrameServer/x64
+/FrameServer/.vs
+/FrameServer/FrameServer.vcxproj.user
+<<<<<<< HEAD
+/StaxRip.sln.DotSettings.user
+=======
+/docs/_build
+/Tools/AutoCrop/obj
+>>>>>>> origin/master
