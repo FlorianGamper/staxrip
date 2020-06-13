@@ -1,4 +1,5 @@
-﻿Imports System.Globalization
+﻿
+Imports System.Globalization
 Imports System.Text
 Imports Microsoft.Win32
 
@@ -11,12 +12,18 @@ Public Class LogBuilder
     Sub Append(content As String)
         SyncLock Log
             Log.Append(content)
-            If content <> "" Then Last = content
+
+            If content <> "" Then
+                Last = content
+            End If
         End SyncLock
     End Sub
 
     Function EndsWith(value As String) As Boolean
-        If Last = "" Then Return False
+        If Last = "" Then
+            Return False
+        End If
+
         Return Last.EndsWith(value)
     End Function
 
@@ -25,7 +32,11 @@ Public Class LogBuilder
     Sub Write(title As String, content As String)
         SyncLock WriteLock
             StartTime = DateTime.Now
-            If Not EndsWith(BR2) Then Append(BR)
+
+            If Not EndsWith(BR2) Then
+                Append(BR)
+            End If
+
             Append(FormatHeader(title))
 
             If content <> "" Then
@@ -57,23 +68,29 @@ Public Class LogBuilder
     End Property
 
     Sub WriteHeader(value As String)
-        StartTime = DateTime.Now
-
         If value <> "" Then
-            If Not EndsWith(BR2) Then Append(BR)
+            StartTime = DateTime.Now
+
+            If Not EndsWith(BR2) Then
+                Append(BR)
+            End If
+
             Append(FormatHeader(value))
         End If
     End Sub
 
     Function FormatHeader(value As String) As String
-        Dim len = (70 - value.Length) \ 2
-        Return "-".Multiply(len) + " " + value + " " + "-".Multiply(len) + BR2
+        Dim len = (65 - value.Length) \ 2
+        Return "--" + "-".Multiply(len) + " " + value + " " + "-".Multiply(len) + "--" + BR2
     End Function
 
     Shared EnvironmentString As String 'cached due to bug report
 
     Sub WriteEnvironment()
-        If ToString.Contains("- System Environment -") Then Exit Sub
+        If ToString.Contains("- System Environment -") Then
+            Exit Sub
+        End If
+
         WriteHeader("System Environment")
 
         If EnvironmentString = "" Then EnvironmentString =
@@ -83,7 +100,7 @@ Public Class LogBuilder
             "CPU:" + Registry.LocalMachine.GetString("HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString") + BR +
             "GPU:" + String.Join(", ", OS.VideoControllers) + BR +
             "Resolution:" & Screen.PrimaryScreen.Bounds.Width & " x " & Screen.PrimaryScreen.Bounds.Height & BR +
-            "DPI:" & g.MainForm.DeviceDpi
+            "DPI:" & g.DPI
 
         WriteLine(EnvironmentString.FormatColumn(":"))
     End Sub
@@ -94,7 +111,11 @@ Public Class LogBuilder
 
     Sub WriteStats(start As DateTime)
         Dim n = DateTime.Now.Subtract(start)
-        If Not EndsWith(BR2) Then Append(BR)
+
+        If Not EndsWith(BR2) Then
+            Append(BR)
+        End If
+
         Append("Start: ".PadRight(10) + start.ToLongTimeString + BR)
         Append("End: ".PadRight(10) + DateTime.Now.ToLongTimeString + BR)
         Append("Duration: " + CInt(Math.Floor(n.TotalHours)).ToString("d2") + ":" + n.Minutes.ToString("d2") + ":" + n.Seconds.ToString("d2") + BR2)
@@ -113,15 +134,19 @@ Public Class LogBuilder
     End Function
 
     Sub Save(Optional proj As Project = Nothing)
-        If proj Is Nothing Then proj = p
+        If proj Is Nothing Then
+            proj = p
+        End If
 
         SyncLock Log
-            Log.ToString.WriteFileUtf8(GetPath(proj))
+            Log.ToString.WriteFileUTF8BOM(GetPath(proj))
         End SyncLock
     End Sub
 
     Function GetPath(Optional proj As Project = Nothing) As String
-        If proj Is Nothing Then proj = p
+        If proj Is Nothing Then
+            proj = p
+        End If
 
         If proj.SourceFile = "" Then
             Return Folder.Temp + "staxrip.log"
@@ -131,7 +156,11 @@ Public Class LogBuilder
             Return ret
         Else
             Dim ret = proj.TempDir + proj.TargetFile.Base + "_staxrip.log"
-            If ret.Length > 259 Then ret = proj.TempDir + proj.TargetFile.Base.Shorten(10) + "_staxrip.log"
+
+            If ret.Length > 259 Then
+                ret = proj.TempDir + proj.TargetFile.Base.Shorten(10) + "_staxrip.log"
+            End If
+
             Return ret
         End If
     End Function

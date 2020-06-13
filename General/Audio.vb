@@ -1,31 +1,49 @@
-﻿Imports System.Text
+﻿
+Imports System.Text
 Imports System.Globalization
-
-Imports VB6 = Microsoft.VisualBasic
 
 Public Class Audio
     Shared Sub Process(ap As AudioProfile)
-        If Not File.Exists(ap.File) OrElse TypeOf ap Is NullAudioProfile Then Exit Sub
-        If Not Directory.Exists(p.TempDir) Then p.TempDir = ap.File.Dir
+        If Not File.Exists(ap.File) OrElse TypeOf ap Is NullAudioProfile Then
+            Exit Sub
+        End If
 
-        If ap.File <> p.SourceFile Then Log.Write("MediaInfo Audio Source " & ap.GetTrackID, MediaInfo.GetSummary(ap.File))
+        If Not Directory.Exists(p.TempDir) Then
+            p.TempDir = ap.File.Dir
+        End If
+
+        If ap.File <> p.SourceFile Then
+            Log.Write("Media Info Audio Source " & ap.GetTrackID, MediaInfo.GetSummary(ap.File))
+        End If
 
         If TypeOf ap Is GUIAudioProfile Then
             Dim gap = DirectCast(ap, GUIAudioProfile)
-            If gap.CommandLines.Contains("ffmpeg") Then gap.NormalizeFF()
+
+            If gap.CommandLines.Contains("ffmpeg") Then
+                gap.NormalizeFF()
+            End If
         End If
 
-        If ap.Decoder <> AudioDecoderMode.Automatic Then Convert(ap)
+        Dim extractCore = TypeOf ap Is GUIAudioProfile AndAlso DirectCast(ap, GUIAudioProfile).ExtractCore
+
+        If ap.Decoder <> AudioDecoderMode.Automatic AndAlso Not extractCore Then
+            Convert(ap)
+        End If
 
         If ap.HasStream Then
             Dim cutting = p.Ranges.Count > 0
 
             Dim directMux = TypeOf ap Is MuxAudioProfile AndAlso
                 p.VideoEncoder.Muxer.IsSupported(ap.Stream.Extension.TrimStart("."c)) AndAlso
-                p.VideoEncoder.Muxer.IsSupported(ap.File.Ext) AndAlso
-                Not cutting
+                p.VideoEncoder.Muxer.IsSupported(ap.File.Ext) AndAlso Not cutting
 
-            If (cutting OrElse Not ap.IsInputSupported) AndAlso Not directMux Then
+            Dim trackIsSupportedButNotContainer = TypeOf ap Is MuxAudioProfile AndAlso
+                p.VideoEncoder.Muxer.IsSupported(ap.Stream.Extension.TrimStart("."c)) AndAlso
+                Not p.VideoEncoder.Muxer.IsSupported(ap.File.Ext)
+
+            If ((cutting OrElse Not ap.IsInputSupported) AndAlso Not directMux) OrElse
+                trackIsSupportedButNotContainer Then
+
                 Select Case ap.File.ExtFull
                     Case ".mkv", ".webm"
                         mkvDemuxer.Demux(ap.File, {ap.Stream}, Nothing, ap, p, False, False)
@@ -45,14 +63,21 @@ Public Class Audio
 
         Cut(ap)
 
-        If Not TypeOf ap Is MuxAudioProfile AndAlso Not ap.IsInputSupported Then Convert(ap)
+        If Not TypeOf ap Is MuxAudioProfile AndAlso Not ap.IsInputSupported Then
+            Convert(ap)
+        End If
     End Sub
 
     Shared Function GetBaseNameForStream(path As String, stream As AudioStream, Optional shorten As Boolean = False) As String
         Dim ret = If(shorten, path.Base.Shorten(10), path.Base) + " ID" & (stream.Index + 1)
 
-        If stream.Delay <> 0 Then ret += " " & stream.Delay & "ms"
-        If stream.Language.TwoLetterCode <> "iv" Then ret += " " + stream.Language.ToString
+        If stream.Delay <> 0 Then
+            ret += " " & stream.Delay & "ms"
+        End If
+
+        If stream.Language.TwoLetterCode <> "iv" Then
+            ret += " " + stream.Language.ToString
+        End If
 
         If Not shorten AndAlso path.Length < 200 AndAlso stream.Title <> "" Then
             ret += " {" + stream.Title.Shorten(50).EscapeIllegalFileSysChars + "}"
@@ -62,7 +87,9 @@ Public Class Audio
     End Function
 
     Shared Sub Convert(ap As AudioProfile)
-        If ap.File.Ext = ap.ConvertExt Then Exit Sub
+        If ap.File.Ext = ap.ConvertExt Then
+            Exit Sub
+        End If
 
         If ap.File.Ext = "avs" Then
             Dim outPath = ap.File.DirAndBase + "." + ap.ConvertExt
@@ -106,16 +133,29 @@ Public Class Audio
     End Sub
 
     Shared Sub CutNicAudio(ap As AudioProfile)
-        If ap.File.Contains("_cut_") Then Exit Sub
-        If Not FileTypes.NicAudioInput.Contains(ap.File.Ext) Then Exit Sub
-        If Not Package.AviSynth.VerifyOK(True) Then Throw New AbortException
+        If ap.File.Contains("_cut_") Then
+            Exit Sub
+        End If
+
+        If Not FileTypes.NicAudioInput.Contains(ap.File.Ext) Then
+            Exit Sub
+        End If
+
+        If Not Package.AviSynth.VerifyOK(True) Then
+            Throw New AbortException
+        End If
+
         ap.Delay = 0
         Dim d As New VideoScript
         d.Filters.AddRange(p.Script.Filters)
         Dim wavPath = p.TempDir + ap.File.Base + "_cut_na.wav"
         d.Path = p.TempDir + ap.File.Base + "_cut_na.avs"
         d.Filters.Insert(1, New VideoFilter(GetNicAudioCode(ap)))
-        If ap.Channels = 2 Then d.Filters.Add(New VideoFilter(GetDown2Code))
+
+        If ap.Channels = 2 Then
+            d.Filters.Add(New VideoFilter(GetDown2Code))
+        End If
+
         d.Synchronize()
 
         Dim args = "-i " + d.Path.Escape + " -y -hide_banner " + wavPath.Escape
@@ -139,9 +179,18 @@ Public Class Audio
     End Sub
 
     Shared Sub ConvertNicAudio(ap As AudioProfile)
-        If ap.File.Ext = ap.ConvertExt Then Exit Sub
-        If Not FileTypes.NicAudioInput.Contains(ap.File.Ext) Then Exit Sub
-        If Not Package.AviSynth.VerifyOK(True) Then Throw New AbortException
+        If ap.File.Ext = ap.ConvertExt Then
+            Exit Sub
+        End If
+
+        If Not FileTypes.NicAudioInput.Contains(ap.File.Ext) Then
+            Exit Sub
+        End If
+
+        If Not Package.AviSynth.VerifyOK(True) Then
+            Throw New AbortException
+        End If
+
         ap.Delay = 0
         Dim d As New VideoScript
         d.Filters.AddRange(p.Script.Filters)
@@ -149,7 +198,11 @@ Public Class Audio
         Dim outPath = p.TempDir + ap.File.Base + "_DecodeNicAudio." + ap.ConvertExt
         d.Path = p.TempDir + ap.File.Base + "_DecodeNicAudio.avs"
         d.Filters.Insert(1, New VideoFilter(GetNicAudioCode(ap)))
-        If ap.Channels = 2 Then d.Filters.Add(New VideoFilter(GetDown2Code))
+
+        If ap.Channels = 2 Then
+            d.Filters.Add(New VideoFilter(GetDown2Code))
+        End If
+
         d.Synchronize()
 
         Dim args = "-i " + d.Path.Escape + " -y -hide_banner " + outPath.Escape
@@ -213,8 +266,14 @@ Public Class Audio
     End Function
 
     Shared Sub ConvertEac3to(ap As AudioProfile)
-        If ap.File.Ext = ap.ConvertExt Then Exit Sub
-        If Not FileTypes.eac3toInput.Contains(ap.File.Ext) Then Exit Sub
+        If ap.File.Ext = ap.ConvertExt Then
+            Exit Sub
+        End If
+
+        If Not FileTypes.eac3toInput.Contains(ap.File.Ext) Then
+            Exit Sub
+        End If
+
         Dim outPath = p.TempDir + ap.File.Base + "." + ap.ConvertExt
         Dim args = ap.File.Escape + " " + outPath.Escape
 
@@ -240,7 +299,6 @@ Public Class Audio
             proc.Package = Package.eac3to
             proc.Arguments = args
             proc.TrimChars = {"-"c, " "c}
-            proc.RemoveChars = {VB6.ChrW(8)} 'backspace
             proc.SkipStrings = {"process:", "analyze:"}
             proc.AllowedExitCodes = {0, 1}
             proc.Start()
@@ -255,14 +313,27 @@ Public Class Audio
     End Sub
 
     Shared Sub ConvertFF(ap As AudioProfile)
-        If ap.File.Ext = ap.ConvertExt Then Exit Sub
+        If ap.File.Ext = ap.ConvertExt Then
+            Exit Sub
+        End If
+
         Dim gap = TryCast(ap, GUIAudioProfile)
         gap?.NormalizeFF()
         Dim outPath = p.TempDir + ap.File.Base + "." + ap.ConvertExt
-        If ap.File = outPath Then outPath += "." + ap.ConvertExt
+
+        If ap.File = outPath Then
+            outPath += "." + ap.ConvertExt
+        End If
+
         Dim args = "-i " + ap.File.Escape
-        If Not ap.Stream Is Nothing Then args += " -map 0:" & ap.Stream.StreamOrder
-        If ap.Gain <> 0 Then args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+
+        If Not ap.Stream Is Nothing Then
+            args += " -map 0:" & ap.Stream.StreamOrder
+        End If
+
+        If ap.Gain <> 0 Then
+            args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+        End If
 
         If gap?.Params.Normalize Then
             If gap.Params.ffNormalizeMode = ffNormalizeMode.dynaudnorm Then
@@ -273,7 +344,11 @@ Public Class Audio
         End If
 
         args += " -y -hide_banner -ac " & ap.Channels
-        If ap.ConvertExt.EqualsAny("wav", "w64") Then args += " -c:a pcm_s24le"
+
+        If ap.ConvertExt.EqualsAny("wav", "w64") Then
+            args += " -c:a pcm_s24le"
+        End If
+
         args += " " + outPath.Escape
 
         Using proc As New Proc
@@ -320,12 +395,22 @@ Public Class Audio
         If params.ffmpegDynaudnormC Then ret += ":c=true"
         If params.ffmpegDynaudnormB Then ret += ":b=true"
 
-        If ret <> "" Then Return "-af dynaudnorm=" + ret.Trim(":"c) Else Return "-af dynaudnorm"
+        If ret <> "" Then
+            Return "-af dynaudnorm=" + ret.Trim(":"c)
+        Else
+            Return "-af dynaudnorm"
+        End If
     End Function
 
     Shared Sub ConvertDirectShowSource(ap As AudioProfile, Optional useFlac As Boolean = False)
-        If ap.File.Ext = ap.ConvertExt Then Exit Sub
-        If Not Package.AviSynth.VerifyOK(True) Then Throw New AbortException
+        If ap.File.Ext = ap.ConvertExt Then
+            Exit Sub
+        End If
+
+        If Not Package.AviSynth.VerifyOK(True) Then
+            Throw New AbortException
+        End If
+
         ap.Delay = 0
         Dim d As New VideoScript
         d.Filters.AddRange(p.Script.Filters)
@@ -333,7 +418,11 @@ Public Class Audio
         Dim outPath = p.TempDir + ap.File.Base + "_convDSS." + ap.ConvertExt
         d.Path = p.TempDir + ap.File.Base + "_DecDSS.avs"
         d.Filters.Insert(1, New VideoFilter("AudioDub(last,DirectShowSource(""" + ap.File + """, video=false))"))
-        If ap.Channels = 2 Then d.Filters.Add(New VideoFilter(GetDown2Code))
+
+        If ap.Channels = 2 Then
+            d.Filters.Add(New VideoFilter(GetDown2Code))
+        End If
+
         d.Synchronize()
 
         Dim args = "-i " + d.Path.Escape + " -y -hide_banner " + outPath.Escape
@@ -357,8 +446,14 @@ Public Class Audio
     End Sub
 
     Shared Sub ConvertFFAudioSource(ap As AudioProfile)
-        If ap.File.Ext = ap.ConvertExt Then Exit Sub
-        If Not Package.AviSynth.VerifyOK(True) Then Throw New AbortException
+        If ap.File.Ext = ap.ConvertExt Then
+            Exit Sub
+        End If
+
+        If Not Package.AviSynth.VerifyOK(True) Then
+            Throw New AbortException
+        End If
+
         ap.Delay = 0
         Dim cachefile = p.TempDir + ap.File.Base + ".ffindex"
         g.ffmsindex(ap.File, cachefile)
@@ -368,7 +463,11 @@ Public Class Audio
         Dim outPath = p.TempDir + ap.File.Base + "_convFFAudioSource." + ap.ConvertExt
         d.Path = p.TempDir + ap.File.Base + "_DecodeFFAudioSource.avs"
         d.Filters.Insert(1, New VideoFilter("AudioDub(last,FFAudioSource(""" + ap.File + """, cachefile=""" + cachefile + """))"))
-        If ap.Channels = 2 Then d.Filters.Add(New VideoFilter(GetDown2Code))
+
+        If ap.Channels = 2 Then
+            d.Filters.Add(New VideoFilter(GetDown2Code))
+        End If
+
         d.Synchronize()
 
         Dim args = "-i " + d.Path.Escape + " -y -hide_banner " + outPath.Escape
@@ -392,15 +491,25 @@ Public Class Audio
     End Sub
 
     Shared Sub CutDirectShowSource(ap As AudioProfile)
-        If ap.File.Contains("_cut_") Then Exit Sub
-        If Not Package.AviSynth.VerifyOK(True) Then Throw New AbortException
+        If ap.File.Contains("_cut_") Then
+            Exit Sub
+        End If
+
+        If Not Package.AviSynth.VerifyOK(True) Then
+            Throw New AbortException
+        End If
+
         ap.Delay = 0
         Dim d As New VideoScript
         d.Filters.AddRange(p.Script.Filters)
         Dim wavPath = p.TempDir + ap.File.Base + "_cut_ds.wav"
         d.Path = p.TempDir + ap.File.Base + "_cut_ds.avs"
         d.Filters.Insert(1, New VideoFilter("AudioDub(last,DirectShowSource(""" + ap.File + """, video=false))"))
-        If ap.Channels = 2 Then d.Filters.Add(New VideoFilter(GetDown2Code))
+
+        If ap.Channels = 2 Then
+            d.Filters.Add(New VideoFilter(GetDown2Code))
+        End If
+
         d.Synchronize()
 
         Dim args = "-i " + d.Path.Escape + " -y -hide_banner " + wavPath.Escape
@@ -424,8 +533,14 @@ Public Class Audio
     End Sub
 
     Shared Sub CutFFAudioSource(ap As AudioProfile)
-        If ap.File.Contains("_cut_") Then Exit Sub
-        If Not Package.AviSynth.VerifyOK(True) Then Throw New AbortException
+        If ap.File.Contains("_cut_") Then
+            Exit Sub
+        End If
+
+        If Not Package.AviSynth.VerifyOK(True) Then
+            Throw New AbortException
+        End If
+
         ap.Delay = 0
         Dim cachefile = p.TempDir + ap.File.Base + ".ffindex"
         g.ffmsindex(ap.File, cachefile)
@@ -434,7 +549,11 @@ Public Class Audio
         Dim wavPath = p.TempDir + ap.File.Base + "_cut_ff.wav"
         d.Path = p.TempDir + ap.File.Base + "_cut_ff.avs"
         d.Filters.Insert(1, New VideoFilter("AudioDub(last,FFAudioSource(""" + ap.File + """, cachefile=""" + cachefile + """))"))
-        If ap.Channels = 2 Then d.Filters.Add(New VideoFilter(GetDown2Code))
+
+        If ap.Channels = 2 Then
+            d.Filters.Add(New VideoFilter(GetDown2Code))
+        End If
+
         d.Synchronize()
 
         Dim args = "-i " + d.Path.Escape + " -y -hide_banner " + wavPath.Escape
@@ -458,8 +577,13 @@ Public Class Audio
     End Sub
 
     Shared Sub CutMkvmerge(ap As AudioProfile)
-        If ap.File.Contains("_cut_") Then Exit Sub
-        If Not Package.AviSynth.VerifyOK(True) Then Throw New AbortException
+        If ap.File.Contains("_cut_") Then
+            Exit Sub
+        End If
+
+        If Not Package.AviSynth.VerifyOK(True) Then
+            Throw New AbortException
+        End If
 
         Dim aviPath = p.TempDir + ap.File.Base + "_cut_mm.avi"
         Dim d = (p.CutFrameCount / p.CutFrameRate).ToString("f9", CultureInfo.InvariantCulture)
@@ -485,7 +609,7 @@ Public Class Audio
         Dim mkvPath = p.TempDir + ap.File.Base + "_cut_.mkv"
 
         Dim args2 = "-o " + mkvPath.Escape + " " + aviPath.Escape + " " + ap.File.Escape
-        args2 += " --split parts-frames:" + p.Ranges.Select(Function(v) v.Start & "-" & v.End).Join(",+")
+        args2 += " --split parts-frames:" + p.Ranges.Select(Function(v) v.Start & "-" & (v.End + 1)).Join(",+")
         args2 += " --ui-language en"
 
         Using proc As New Proc
@@ -516,7 +640,10 @@ Public Class Audio
         If fail AndAlso TypeOf ap Is GUIAudioProfile AndAlso Not ap.File.Ext = "wav" Then
             Log.Write("Error", "no output found")
             Convert(ap)
-            If ap.File.Ext = "wav" Then Cut(ap)
+
+            If ap.File.Ext = "wav" Then
+                Cut(ap)
+            End If
         End If
     End Sub
 

@@ -1,4 +1,7 @@
-rmdir _build
+
+@echo off
+SET PATH=%PATH%;C:\Program Files (x86)\Google\Chrome\Application
+rmdir /S /Q _build
 call make html
-D:\Projekte\VS\VB\StaxRip\docs\_build\html\index.html
+chrome.exe %~dp0\_build\html\index.html
 pause

@@ -10,7 +10,7 @@ Public Class ProcController
     Property Proc As Proc
     Property LogTextBox As New TextBox
     Property ProgressBar As New LabelProgressBar
-    Property ProcForm As ProcForm
+    Property ProcForm As ProcessingForm
     Property CheckBox As New CheckBoxEx
 
     Private LogAction As Action = New Action(AddressOf LogHandler)
@@ -23,11 +23,17 @@ Public Class ProcController
 
     Sub New(proc As Proc)
         Me.Proc = proc
-        Me.ProcForm = g.ProcForm
+        ProcForm = g.ProcForm
 
+        Dim pad = g.ProcForm.FontHeight \ 6
+        CheckBox.Margin = New Padding(pad, pad, 0, pad)
         CheckBox.Appearance = Appearance.Button
-        CheckBox.AutoSize = True
+        CheckBox.TextAlign = ContentAlignment.MiddleCenter
+        CheckBox.Font = New Font("Consolas", 9 * s.UIScaleFactor)
         CheckBox.Text = " " + proc.Title + " "
+        Dim sz = TextRenderer.MeasureText(CheckBox.Text, CheckBox.Font)
+        CheckBox.Width = sz.Width + CheckBox.Font.Height
+        CheckBox.Height = CInt(CheckBox.Font.Height * 1.5)
         AddHandler CheckBox.Click, AddressOf Click
 
         ProgressBar.Dock = DockStyle.Fill
@@ -45,32 +51,42 @@ Public Class ProcController
         ProcForm.flpNav.Controls.Add(CheckBox)
 
         AddHandler proc.ProcDisposed, AddressOf ProcDisposed
-        AddHandler proc.Process.OutputDataReceived, AddressOf DataReceived
-        AddHandler proc.Process.ErrorDataReceived, AddressOf DataReceived
+        AddHandler proc.OutputDataReceived, AddressOf DataReceived
+        AddHandler proc.ErrorDataReceived, AddressOf DataReceived
     End Sub
 
-    Sub DataReceived(sender As Object, e As DataReceivedEventArgs)
-        If e.Data = "" Then
+    Sub DataReceived(value As String)
+        If value = "" Then
             Exit Sub
         End If
 
-        Dim ret = Proc.ProcessData(e.Data)
+        Dim ret = Proc.ProcessData(value)
 
         If ret.Data = "" Then
             Exit Sub
         End If
 
         If ret.Skip Then
+            If Proc.IntegerFrameOutput AndAlso Proc.FrameCount > 0 AndAlso ret.Data.IsInt Then
+                ret.Data = "Progress: " + (ret.Data.ToInt / Proc.FrameCount * 100).ToString("0.00") + "%"
+            End If
+
+            If Proc.IntegerPercentOutput AndAlso ret.Data.IsInt Then
+                ret.Data = "Progress: " + ret.Data + "%"
+            End If
+
             ProcForm.BeginInvoke(StatusAction, {ret.Data})
         Else
-            Proc.Log.WriteLine(ret.Data)
+            If ret.Data.Trim <> "" Then
+                Proc.Log.WriteLine(ret.Data)
+            End If
+
             ProcForm.BeginInvoke(LogAction, Nothing)
         End If
     End Sub
 
-    Private Sub LogHandler()
-        Dim log = Proc.Log.ToString
-        LogTextBox.Text = log
+    Sub LogHandler()
+        LogTextBox.Text = Proc.Log.ToString
 
         REM Always show the Bottom of the Log
         If (s.IsLogScrollToBottom And log IsNot Nothing And log.Length > 0) Then
@@ -80,7 +96,7 @@ Public Class ProcController
         End If
     End Sub
 
-    Private Sub StatusHandler(value As String)
+    Sub StatusHandler(value As String)
         ProgressBar.Text = value
         SetProgress(value)
     End Sub
@@ -88,13 +104,20 @@ Public Class ProcController
     Shared LastProgress As Double
 
     Sub SetProgress(value As String)
-        If Proc.IsSilent Then Exit Sub
+        If Proc.IsSilent Then
+            Exit Sub
+        End If
 
         If value.Contains("%") Then
             value = value.Left("%")
 
-            If value.Contains("[") Then value = value.Right("[")
-            If value.Contains(" ") Then value = value.RightLast(" ")
+            If value.Contains("[") Then
+                value = value.Right("[")
+            End If
+
+            If value.Contains(" ") Then
+                value = value.RightLast(" ")
+            End If
 
             If value.IsDouble Then
                 Dim val = value.ToDouble
@@ -126,27 +149,14 @@ Public Class ProcController
 
                 Exit Sub
             End If
-        ElseIf value.IsInt Then
-            Dim val = value.ToInt
-
-            If LastProgress <> val Then
-                ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
-                ProcForm.Taskbar?.SetValue(val, 100)
-                ProcForm.NotifyIcon.Text = val & "%"
-                ProgressBar.Value = val
-                ProgressBar.Text = val & "%"
-                LastProgress = val
-            End If
-
-            Exit Sub
-        ElseIf Proc.Frames > 0 AndAlso value.Contains("frame=") AndAlso value.Contains("fps=") Then
+        ElseIf Proc.FrameCount > 0 AndAlso value.Contains("frame=") AndAlso value.Contains("fps=") Then
             Dim frameString = value.Left("fps=").Right("frame=")
 
             If frameString.IsInt Then
                 Dim frame = frameString.ToInt
 
-                If frame < Proc.Frames Then
-                    Dim progressValue = CSng(frame / Proc.Frames * 100)
+                If frame < Proc.FrameCount Then
+                    Dim progressValue = CSng(frame / Proc.FrameCount * 100)
 
                     If LastProgress <> progressValue Then
                         ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
@@ -184,7 +194,7 @@ Public Class ProcController
         End If
     End Sub
 
-    Private Sub Click(sender As Object, e As EventArgs)
+    Sub Click(sender As Object, e As EventArgs)
         SyncLock Procs
             For Each i In Procs
                 If Not i.CheckBox Is sender Then i.Deactivate()
@@ -236,7 +246,10 @@ Public Class ProcController
         For Each procButton In Procs.ToArray
             If procButton.Proc.Process.ProcessName = "cmd" Then
                 For Each process In ProcessHelp.GetChilds(procButton.Proc.Process)
-                    If {"conhost", "vspipe"}.Contains(process.ProcessName) Then Continue For
+                    If {"conhost", "vspipe"}.Contains(process.ProcessName) Then
+                        Continue For
+                    End If
+
                     ret.Add(process)
                 Next
             Else
@@ -252,8 +265,8 @@ Public Class ProcController
             Procs.Remove(Me)
 
             RemoveHandler Proc.ProcDisposed, AddressOf ProcDisposed
-            RemoveHandler Proc.Process.OutputDataReceived, AddressOf DataReceived
-            RemoveHandler Proc.Process.ErrorDataReceived, AddressOf DataReceived
+            RemoveHandler Proc.OutputDataReceived, AddressOf DataReceived
+            RemoveHandler Proc.ErrorDataReceived, AddressOf DataReceived
 
             ProcForm.flpNav.Controls.Remove(CheckBox)
             ProcForm.pnLogHost.Controls.Remove(LogTextBox)
@@ -280,7 +293,7 @@ Public Class ProcController
                      Thread.Sleep(500)
 
                      SyncLock Procs
-                         If Procs.Count = 0 AndAlso Not g.IsProcessing Then
+                         If Procs.Count = 0 AndAlso Not g.IsJobProcessing Then
                              Finished()
                          End If
                      End SyncLock
@@ -356,11 +369,11 @@ Public Class ProcController
         SyncLock Procs
             If g.ProcForm Is Nothing Then
                 Task.Run(Sub()
-                             g.ProcForm = New ProcForm
+                             g.ProcForm = New ProcessingForm
                              Application.Run(g.ProcForm)
                          End Sub)
 
-                While Not ProcForm.WasHandleCreated
+                While Not ProcessingForm.WasHandleCreated
                     Thread.Sleep(50)
                 End While
             End If
