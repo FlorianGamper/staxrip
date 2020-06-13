@@ -25,6 +25,7 @@ Public Class GlobalClass
         If s?.WriteDebugLog Then Trace.TraceInformation(value)
     End Sub
 
+    REM Attention hierarchiy call not nexxessary
     Sub ProcessJobs()
         Dim jobs = Job.ActiveJobs
         If jobs.Count = 0 Then Exit Sub
@@ -52,6 +53,7 @@ Public Class GlobalClass
                     g.MainForm.SetSavedProject()
                     g.MainForm.Close()
                 Else
+                    REM nested call
                     ProcessJobs()
                 End If
             End If
@@ -152,9 +154,6 @@ Public Class GlobalClass
             Log.Save()
 
             g.ArchiveLogFile(Log.GetPath)
-
-            REM Project has to be cleared to free the source file
-            g.MainForm.OpenProject("", False)
 
             g.DeleteTempFiles()
             g.RaiseAppEvent(ApplicationEvent.JobProcessed)
