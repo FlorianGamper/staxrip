@@ -135,6 +135,7 @@ Public Class Package
         .Location = "Support\MP4Box",
         .WebURL = "http://gpac.wp.mines-telecom.fr/",
         .HelpURL = "http://gpac.wp.mines-telecom.fr/mp4box/mp4box-documentation",
+        .DownloadURL = "https://www.mediafire.com/folder/vkt2ckzjvt0qf/StaxRip_Tools",
         .HelpSwitch = "-h",
         .Description = "MP4Box is a MP4 muxing and demuxing console app."})
 
@@ -146,7 +147,7 @@ Public Class Package
         .HelpURL = "http://avisynth.nl",
         .DownloadURL = "https://github.com/AviSynth/AviSynthPlus/releases",
         .Description = "Video processing scripting library.",
-        .Locations = {Folder.System, "FrameServer\AviSynth"},
+        .HintDirFunc = Function() Package.AviSynth.GetAviSynthHintDir,
         .RequiredFunc = Function() p.Script.Engine = ScriptEngine.AviSynth})
 
     Shared Property VapourSynth As Package = Add(New Package With {
@@ -167,8 +168,7 @@ Public Class Package
         .WebURL = "http://www.vapoursynth.com",
         .HelpURL = "http://www.vapoursynth.com/doc/vspipe.html",
         .DownloadURL = "https://github.com/vapoursynth/vapoursynth/releases",
-        .HelpFilename = "doc/vspipe.html",
-        .HelpSwitch = "",
+        .HelpSwitch = "stderr",
         .RequiredFunc = Function() p.Script.Engine = ScriptEngine.VapourSynth,
         .HintDirFunc = Function() Package.VapourSynth.GetVapourSynthHintDir})
 
@@ -232,6 +232,7 @@ Public Class Package
         .Description = "Console app that displays AviSynth script clip info.",
         .HelpFilename = "doc\AVSMeter.html",
         .WebURL = "http://forum.doom9.org/showthread.php?t=174797",
+        .DownloadURL = "https://www.mediafire.com/folder/x6f7yqjufdg7c/Groucho%27s_Avisynth_Stuff",
         .HelpSwitch = ""})
 
     Shared Property BDSup2SubPP As Package = Add(New Package With {
@@ -353,16 +354,16 @@ Public Class Package
         .AvsFilterNames = {"f3kdb"}})
 
     Shared Property f3kdb_neo As Package = Add(New PluginPackage With {
-        .Name = "Neo f3kdb",
+        .Name = "f3kdb Neo",
         .Filename = "neo-f3kdb.dll",
         .WebURL = "https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb",
         .HelpURL = "http://f3kdb.readthedocs.io/en/latest/#",
         .DownloadURL = "https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb/releases",
         .Description = "Debanding filter forked from flash3kyuu_deband.",
         .AvsFilterNames = {"neo_f3kdb"},
-        .AvsFiltersFunc = Function() {New VideoFilter("Misc", "neo_f3kdb", $"neo_f3kdb(y=64, cb=64, cr=64, grainy=0, grainc=0)")},
+        .AvsFiltersFunc = Function() {New VideoFilter("Misc", "f3kdb Neo", $"neo_f3kdb(y=64, cb=64, cr=64, grainy=0, grainc=0)")},
         .VSFilterNames = {"core.neo_f3kdb.Deband"},
-        .VSFiltersFunc = Function() {New VideoFilter("Misc", "neo_f3kdb", "clip = core.neo_f3kdb.Deband(clip, y=64, cb=64, cr=64, grainy=0, grainc=0)")}})
+        .VSFiltersFunc = Function() {New VideoFilter("Misc", "f3kdb Neo", "clip = core.neo_f3kdb.Deband(clip, y=64, cb=64, cr=64, grainy=0, grainc=0)")}})
 
     Shared Property vinverse As Package = Add(New PluginPackage With {
         .Name = "vinverse",
@@ -382,6 +383,7 @@ Public Class Package
         .Filename = "avs2pipemod64.exe",
         .Location = "Support\avs2pipemod",
         .WebURL = "http://github.com/chikuzen/avs2pipemod",
+        .DownloadURL = "https://github.com/chikuzen/avs2pipemod/releases",
         .HelpSwitch = "stderr",
         .Description = "Given an AviSynth script as input, avs2pipemod can send video, audio, or information of various types to stdout for consumption by command line encoders or other tools."})
 
@@ -389,8 +391,9 @@ Public Class Package
         .Name = "x264",
         .Filename = "x264.exe",
         .Location = "Encoders\x264",
-        .Description = "H.264 video encoding console app.",
+        .Description = "H.264 video encoding console app. Patman mod supports vpy input and shows the estimated size in the status line.",
         .WebURL = "http://www.videolan.org/developers/x264.html",
+        .DownloadURL = "https://www.mediafire.com/folder/vkt2ckzjvt0qf/StaxRip_Tools",
         .HelpURL = "http://www.chaneru.com/Roku/HLS/X264_Settings.htm",
         .HelpFilename = "x264 Help.txt",
         .HelpSwitch = "--fullhelp"})
@@ -404,7 +407,7 @@ Public Class Package
         .DownloadURL = "https://www.mediafire.com/folder/vkt2ckzjvt0qf/StaxRip_Tools",
         .HelpSwitch = "--log-level full --fullhelp",
         .HelpFilename = "x265 Help.txt",
-        .Description = "H.265 video encoding console app."})
+        .Description = "H.265 video encoding console app. Patman mod shows the estimated size in the status line."})
 
     Shared Property SVTAV1 As Package = Add(New Package With {
         .Name = "SVT-AV1",
@@ -412,6 +415,7 @@ Public Class Package
         .Filename = "SvtAv1EncApp.exe",
         .WebURL = "https://github.com/OpenVisualCloud/SVT-AV1",
         .HelpURL = "https://github.com/OpenVisualCloud/SVT-AV1/blob/master/Docs/svt-av1_encoder_user_guide.md",
+        .DownloadURL = "https://www.mediafire.com/folder/vkt2ckzjvt0qf/StaxRip_Tools",
         .HelpSwitch = "stderr-help",
         .Description = "Intel AV1 encoder."})
 
@@ -514,7 +518,8 @@ Public Class Package
         .Description = "AMD hardware video encoder.",
         .HelpFilename = "VCEEnc Help.txt",
         .HelpSwitch = "-h",
-        .WebURL = "http://github.com/rigaya/VCEEnc"})
+        .WebURL = "http://github.com/rigaya/VCEEnc",
+        .DownloadURL = "https://github.com/rigaya/VCEEnc/releases"})
 
     Shared Property FFT3DFilter As Package = Add(New PluginPackage With {
         .Name = "FFT3DFilter",
@@ -539,7 +544,7 @@ Public Class Package
     Shared Property AviSynthShader As Package = Add(New PluginPackage With {
         .Name = "AviSynthShader DLL",
         .Location = "Plugins\AVS\AviSynthShader",
-        .Filename = "Shader.dll",
+        .Filename = "Shader-x64.dll",
         .WebURL = "https://github.com/mysteryx93/AviSynthShader",
         .AvsFilterNames = {"SuperRes", "SuperResXBR", "SuperXBR", "ResizeShader", "SuperResPass", "SuperXbrMulti", "ResizeShader"}})
 
@@ -919,8 +924,8 @@ Public Class Package
             .Name = "TMM2",
             .Filename = "TMM2.dll",
             .Description = "TMM builds a motion-mask for TDeint, which TDeint uses via its 'emask' parameter.",
-            .HelpFilename = "Readme.txt",
-            .WebURL = "http://avisynth.nl/index.php/TMM",
+            .WebURL = "https://github.com/Asd-g/TMM2",
+            .DownloadURL = "https://github.com/Asd-g/TMM2/releases",
             .AvsFilterNames = {"TMM2"}})
 
         Add(New PluginPackage With {
@@ -1589,6 +1594,7 @@ Public Class Package
             .Filename = "Bwdif.dll",
             .Description = "Motion adaptive deinterlacing based on yadif with the use of w3fdif and cubic interpolation algorithms.",
             .WebURL = "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bwdif",
+            .DownloadURL = "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-Bwdif/releases",
             .VSFilterNames = {"bwdif.Bwdif"},
             .VSFiltersFunc = Function() {New VideoFilter("Field", "Bwdif", "clip = core.bwdif.Bwdif(clip, field=0)")}})
 
@@ -2118,6 +2124,10 @@ Public Class Package
         End If
     End Function
 
+    Function IsCustomPathAllowed() As Boolean
+        Return Not Path.StartsWithEx(Folder.System) AndAlso Not Path.ContainsEx("FrameServer")
+    End Function
+
     ReadOnly Property Directory As String
         Get
             Return Path.Dir
@@ -2146,10 +2156,18 @@ Public Class Package
         Return ret
     End Function
 
+    Function GetAviSynthHintDir() As String
+        If Not s.UsePortableAviSynth AndAlso (Folder.System + "AviSynth.dll").FileExists Then
+            Return Folder.System
+        End If
+
+        Return GetPathFromLocation("FrameServer\AviSynth").Dir
+    End Function
+
     Function GetVapourSynthHintDir() As String
         Dim ret As String
 
-        If Not s.UseVapourSynthPortable Then
+        If Not s.UsePortableVapourSynth Then
             ret = Registry.LocalMachine.GetString("Software\VapourSynth", "VapourSynthDLL").Dir
 
             If File.Exists(ret + "VapourSynth.dll") Then
@@ -2171,7 +2189,7 @@ Public Class Package
     End Function
 
     Shared Function GetPythonHintDir() As String
-        If Not s.UseVapourSynthPortable Then
+        If Not FrameServerHelp.IsVapourSynthPortableUsed Then
             For Each x In {8, 9, 7}
                 For Each rootKey In {Registry.CurrentUser, Registry.LocalMachine}
                     Dim exePath = rootKey.GetString($"SOFTWARE\Python\PythonCore\3.{x}\InstallPath", "ExecutablePath")
@@ -2189,9 +2207,7 @@ Public Class Package
             End If
         End If
 
-        If (Folder.Apps + "FrameServer\VapourSynth\python.exe").FileExists Then
-            Return Folder.Apps + "FrameServer\VapourSynth\"
-        End If
+        Return Folder.Apps + "FrameServer\VapourSynth\"
     End Function
 
     Overridable ReadOnly Property Path As String

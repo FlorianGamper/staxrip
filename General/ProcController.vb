@@ -124,7 +124,7 @@ Public Class ProcController
 
                 If LastProgress <> val Then
                     ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
-                    ProcForm.Taskbar?.SetValue(val, 100)
+                    ProcForm.Taskbar?.SetValue(Math.Max(val, 1), 100)
                     ProcForm.NotifyIcon.Text = val & "%"
                     ProgressBar.Value = val
                     LastProgress = val
@@ -141,7 +141,7 @@ Public Class ProcController
 
                 If LastProgress <> val Then
                     ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
-                    ProcForm.Taskbar?.SetValue(val, 100)
+                    ProcForm.Taskbar?.SetValue(Math.Max(val, 1), 100)
                     ProcForm.NotifyIcon.Text = val & "%"
                     ProgressBar.Value = val
                     LastProgress = val
@@ -160,7 +160,7 @@ Public Class ProcController
 
                     If LastProgress <> progressValue Then
                         ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
-                        ProcForm.Taskbar?.SetValue(progressValue, 100)
+                        ProcForm.Taskbar?.SetValue(Math.Max(progressValue, 1), 100)
                         ProcForm.NotifyIcon.Text = progressValue & "%"
                         ProgressBar.Value = progressValue
                         LastProgress = progressValue
@@ -177,7 +177,7 @@ Public Class ProcController
 
                 If LastProgress <> percent Then
                     ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
-                    ProcForm.Taskbar?.SetValue(percent, 100)
+                    ProcForm.Taskbar?.SetValue(Math.Max(percent, 1), 100)
                     ProcForm.NotifyIcon.Text = percent & "%"
                     ProgressBar.Value = percent
                     LastProgress = percent

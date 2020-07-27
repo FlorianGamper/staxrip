@@ -8,7 +8,7 @@ Tools
     "AddGrainC","AviSynth Plugin","AddGrainC.dll","1.7.1","2019-01-01"
     "AutoAdjust","AviSynth Plugin","AutoAdjust.dll","2.60","2016-01-05"
     "Average","AviSynth Plugin","Average.dll","0.94","2019-01-01"
-    "AviSynthShader DLL","AviSynth Plugin","Shader.dll","1.6.5","2018-05-13"
+    "AviSynthShader DLL","AviSynth Plugin","Shader-x64.dll","1.6.6","2020-06-17"
     "AvsResize","AviSynth Plugin","avsresize.dll","r1d","2019-01-01"
     "AVSTP","AviSynth Plugin","avstp.dll","1.0.3.0","2019-01-01"
     "checkmate","AviSynth Plugin","checkmate.dll","0.9","2013-12-19"
@@ -24,6 +24,7 @@ Tools
     "DSS2mod","AviSynth Plugin","avss.dll","2014-11-13","2019-01-01"
     "EEDI2","AviSynth Plugin","EEDI2.dll","0.9.2.0","2019-01-01"
     "EEDI3","AviSynth Plugin","EEDI3.dll","0.9.2.3","2019-01-01"
+    "f3kdb Neo","AviSynth Plugin","neo-f3kdb.dll","r6","2020-05-30"
     "ffms2","AviSynth Plugin","ffms2.dll","89bd1e1 StvG","2020-03-30"
     "FFT3DFilter","AviSynth Plugin","fft3dfilter.dll","2.6","2019-01-31"
     "FFT3DGPU","AviSynth Plugin","FFT3dGPU.dll","0.8.2.0","2018-11-21"
@@ -44,7 +45,6 @@ Tools
     "MPEG2DecPlus","AviSynth Plugin","MPEG2DecPlus64.dll","0.1.2","2020-05-09"
     "MSharpen","AviSynth Plugin","msharpen.dll","0.9","2013-11-30"
     "mvtools2","AviSynth Plugin","mvtools2.dll","2.7.43","2020-06-02"
-    "Neo f3kdb","AviSynth Plugin","neo-f3kdb.dll","r6","2020-05-30"
     "NicAudio","AviSynth Plugin","NicAudio.dll","1.1","2019-01-01"
     "RgTools","AviSynth Plugin","RgTools.dll","1.0","2020-04-27"
     "SangNom2","AviSynth Plugin","SangNom2.dll","0.35","2013-11-30"
@@ -55,7 +55,7 @@ Tools
     "TDeint","AviSynth Plugin","TDeint.dll","1.5","2020-05-13"
     "TEMmod","AviSynth Plugin","TEMmod.dll","0.2.1","2019-01-01"
     "TIVTC","AviSynth Plugin","TIVTC.dll","1.0.17","2020-05-12"
-    "TMM2","AviSynth Plugin","TMM2.dll","2016-07-05","2019-01-01"
+    "TMM2","AviSynth Plugin","TMM2.dll","0.1.4","2020-05-14"
     "TNLMeans","AviSynth Plugin","TNLMeans.dll","1.0.3","2019-01-01"
     "UnDot","AviSynth Plugin","UnDot.dll","0.0.1.1","2006-09-19"
     "VagueDenoiser","AviSynth Plugin","VagueDenoiser.dll","0.35.1.0","2019-01-01"
@@ -65,8 +65,8 @@ Tools
     "VSFilterMod","AviSynth Plugin","VSFilterMod.dll","5.2.2","2020-04-03"
     "xNLMeans","AviSynth Plugin","xNLMeans.dll","0.03","2019-01-01"
     "yadifmod2","AviSynth Plugin","yadifmod2.dll","0.2.2","2020-05-14"
-    "AnimeIVTC","AviSynth Script","AnimeIVTC.avsi","2.20","2019-01-01"
-    "AviSynthShader AVSI","AviSynth Script","Shader.avsi","1.6.5","2018-05-13"
+    "AnimeIVTC","AviSynth Script","AnimeIVTC.avsi","2.22","2018-04-17"
+    "AviSynthShader AVSI","AviSynth Script","Shader.avsi","1.6.6","2018-05-13"
     "CropResize","AviSynth Script","CropResize.avsi","2019-09-09","2019-09-10"
     "DAA3Mod","AviSynth Script","daa3mod.avsi","3.3","2019-01-01"
     "Deblock_QED","AviSynth Script","Deblock_QED.avsi","2011-11-29","2019-01-01"
@@ -103,38 +103,38 @@ Tools
     "aomenc","Console App","aomenc.exe","2.0",""
     "AutoCrop","Console App","AutoCrop.exe","1.0.0.0","2020-05-06"
     "avs2pipemod","Console App","avs2pipemod64.exe","1.1.1","2016-08-14"
-    "AVSMeter","Console App","AVSMeter64.exe","3.0.0.4","2020-05-26"
+    "AVSMeter","Console App","AVSMeter64.exe","3.0.2.0","2020-06-23"
     "eac3to","Console App","eac3to.exe","3.34","2017-11-19"
     "fdkaac","Console App","fdkaac.exe","1.0.0","2019-02-13"
-    "ffmpeg","Console App","ffmpeg.exe","N-97868-gaa6f38c298-g38490cbeb3-gcc10.1.0 Patman","2020-05-22"
-    "mkvextract","Console App","mkvextract.exe","47","2020-05-30"
-    "mkvinfo","Console App","mkvinfo.exe","47","2020-05-30"
-    "mkvmerge","Console App","mkvmerge.exe","47","2020-05-30"
-    "MP4Box","Console App","MP4Box.exe","0.9.0-DEV-rev0-g81b4481e1-gcc10.0.1 Patman","2020-04-18"
+    "ffmpeg","Console App","ffmpeg.exe","N-98276-g1d5d8a30b4-g842bc312ad-gcc10.1.0 Patman","2020-06-21"
+    "mkvextract","Console App","mkvextract.exe","48","2020-06-27"
+    "mkvinfo","Console App","mkvinfo.exe","48","2020-06-27"
+    "mkvmerge","Console App","mkvmerge.exe","48","2020-06-27"
+    "MP4Box","Console App","MP4Box.exe","1.0.0-rev16-g10dd6533a-gcc11.0.0 Patman","2020-06-21"
     "mtn","Console App","mtn.exe","2.0.1","2019-06-27"
-    "NVEnc","Console App","NVEncC64.exe","5.04","2020-06-11"
+    "NVEnc","Console App","NVEncC64.exe","5.06","2020-06-16"
     "PNGopt","Console App","apngopt.exe","1.4","2019-01-01"
     "Python","Console App","python.exe","3.8.3121","2020-04-29"
-    "qaac","Console App","qaac64.exe","2.68","2018-11-20"
-    "QSVEnc","Console App","QSVEncC64.exe","4.03","2020-05-31"
+    "qaac","Console App","qaac64.exe","2.69","2020-06-21"
+    "QSVEnc","Console App","QSVEncC64.exe","4.04","2020-06-16"
     "rav1e","Console App","rav1e.exe","0.3.0","2020-02-29"
-    "SVT-AV1","Console App","SvtAv1EncApp.exe","0.8.2","2020-04-20"
-    "VCEEnc","Console App","VCEEncC64.exe","6.0","2020-04-20"
+    "SVT-AV1","Console App","SvtAv1EncApp.exe","0.8.3-57-gba72bc85-msvc1926 Patman","2020-06-21"
+    "VCEEnc","Console App","VCEEncC64.exe","6.02","2020-05-14"
     "vspipe","Console App","vspipe.exe","r50","2020-05-08"
-    "x264","Console App","x264.exe","M-0.160.3000-33f9e14-gcc10.0.1 Patman","2020-04-11"
+    "x264","Console App","x264.exe","M-0.160.3009-4c9b076-gcc11 Patman","2020-06-22"
     "x265","Console App","x265.exe","M-3.4+6-g73f96ff39-gcc11.0.0 Patman","2020-05-30"
     "xvid_encraw","Console App","xvid_encraw.exe","1.3.7",""
     "BDSup2Sub++","GUI App","bdsup2sub++.exe","1.0.3","2018-05-09"
     "chapterEditor","GUI App","chapterEditor.exe","1.23","2020-05-13"
-    "D2V Witch","GUI App","d2vwitch.exe","v3","2019-04-04"
+    "D2V Witch","GUI App","d2vwitch.exe","v4","2020-06-15"
     "DGIndex","GUI App","DGIndex.exe","1.5.8","2010-03-06"
-    "MediaInfo.NET","GUI App","MediaInfoNET.exe","6.4.0.0","2020-05-22"
+    "MediaInfo.NET","GUI App","MediaInfoNET.exe","6.5.0.0","2020-06-14"
     "MPC-BE","GUI App","mpc-be64.exe","","2020-05-25"
     "MPC-HC","GUI App","mpc-hc64.exe","","2017-07-16"
     "mpv.net","GUI App","mpvnet.exe","5.4.8.0","2020-05-11"
-    "Subtitle Edit","GUI App","SubtitleEdit.exe","3.5.14","2020-03-08"
+    "Subtitle Edit","GUI App","SubtitleEdit.exe","3.5.15","2020-05-01"
     "VSRip","GUI App","VSRip.exe","1.0.0.7","2011-07-14"
-    "AviSynth","Library","AviSynth.dll","3.6.1 Test 8","2020-06-07"
+    "AviSynth","Library","AviSynth.dll","3.6.1","2020-06-20"
     "DirectX 9","Library","d3d9.dll","","2019-12-07"
     "FFTW","Library","libfftw3-3.dll","3.3.8","2018-12-20"
     "MediaInfo","Library","MediaInfo.dll","20.03","2020-04-03"
@@ -146,7 +146,7 @@ Tools
     "Haali Splitter","Misc","splitter.ax","","2013-04-14"
     "AWarpSharp2","VapourSynth Plugin","libawarpsharp2.dll","2018-06-18","2019-01-01"
     "BM3D","VapourSynth Plugin","BM3D.dll","r8","2019-01-03"
-    "Bwdif","VapourSynth Plugin","Bwdif.dll","r1","2020-02-24"
+    "Bwdif","VapourSynth Plugin","Bwdif.dll","r2","2020-06-19"
     "CNR2","VapourSynth Plugin","libcnr2.dll","2016-07-02","2019-01-01"
     "CTMF","VapourSynth Plugin","CTMF.dll","2017-06-02","2019-01-01"
     "d2vsource","VapourSynth Plugin","d2vsource.dll","1.2","2019-08-06"
@@ -378,7 +378,7 @@ http://www.vapoursynth.com
 x264
 ~~~~
 
-H.264 video encoding console app.
+H.264 video encoding console app. Patman mod supports vpy input and shows the estimated size in the status line.
 
 http://www.videolan.org/developers/x264.html
 
@@ -386,7 +386,7 @@ http://www.videolan.org/developers/x264.html
 x265
 ~~~~
 
-H.265 video encoding console app.
+H.265 video encoding console app. Patman mod shows the estimated size in the status line.
 
 http://x265.org
 
@@ -673,6 +673,16 @@ Filters: EEDI3
 http://avisynth.nl/index.php/EEDI3
 
 
+f3kdb Neo
+~~~~~~~~~
+
+Debanding filter forked from flash3kyuu_deband.
+
+Filters: neo_f3kdb
+
+https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb
+
+
 ffms2
 ~~~~~
 
@@ -873,16 +883,6 @@ Filters: MSuper, MAnalyse, MCompensate, MMask, MDeGrain1, MDeGrain2, MDegrain3
 http://github.com/pinterf/mvtools
 
 
-Neo f3kdb
-~~~~~~~~~
-
-Debanding filter forked from flash3kyuu_deband.
-
-Filters: neo_f3kdb
-
-https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb
-
-
 NicAudio
 ~~~~~~~~
 
@@ -990,7 +990,7 @@ TMM builds a motion-mask for TDeint, which TDeint uses via its 'emask' parameter
 
 Filters: TMM2
 
-http://avisynth.nl/index.php/TMM
+https://github.com/Asd-g/TMM2
 
 
 TNLMeans

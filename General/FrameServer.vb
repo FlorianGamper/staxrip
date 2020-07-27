@@ -8,9 +8,10 @@ Public Class FrameServer
     Property NativeServer As IFrameServer
 
     Sub New(path As String)
-        g.InitFrameServer()
+        FrameServerHelp.Init()
 
-        If path.EndsWith(".avs") Then
+        If path.Ext = "avs" Then
+            Environment.SetEnvironmentVariable("AviSynthDLL", Package.AviSynth.Path)
             NativeServer = CreateAviSynthServer()
         Else
             NativeServer = CreateVapourSynthServer()
@@ -90,6 +91,7 @@ End Structure
 
 Public Enum ColorSpace
     Unknown = 0
+    BGR24 = 1342177281
     BGR32 = 1342177282
     RGBP8 = -1879048191
     RGBP10 = -1878720511

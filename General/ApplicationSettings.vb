@@ -12,6 +12,7 @@ Public Class ApplicationSettings
     Public AviSynthProfiles As List(Of FilterCategory)
     Public CharacterLimit As Integer
     Public CheckForUpdates As Boolean
+    Public CheckForUpdatesBeta As Boolean
     Public CheckForUpdatesDismissed As String
     Public CheckForUpdatesLastRequest As DateTime
     Public CheckForUpdatesQuestion As Boolean
@@ -65,7 +66,8 @@ Public Class ApplicationSettings
     Public ThumbnailBackgroundColor As Color = Color.AliceBlue
     Public ToolStripRenderModeEx As ToolStripRenderModeEx = ToolStripRenderModeEx.SystemDefault
     Public UIScaleFactor As Single = 1
-    Public UseVapourSynthPortable As Boolean
+    Public UsePortableAviSynth As Boolean = True
+    Public UsePortableVapourSynth As Boolean = True
     Public VapourSynthFilterPreferences As StringPairList
     Public VapourSynthProfiles As List(Of FilterCategory)
     Public Versions As Dictionary(Of String, Integer)

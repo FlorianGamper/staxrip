@@ -101,10 +101,18 @@ Public Class Folder
 
     Shared ReadOnly Property Plugins As String
         Get
-            If p.Script.Engine = ScriptEngine.AviSynth Then
-                Return Registry.LocalMachine.GetString("SOFTWARE\AviSynth", "plugindir+").FixDir
+            If FrameServerHelp.IsPortable Then
+                If p.Script.Engine = ScriptEngine.AviSynth Then
+                    Return Folder.Settings + "Plugins\AviSynth\"
+                Else
+                    Return Folder.Settings + "Plugins\VapourSynth\"
+                End If
             Else
-                Return Registry.LocalMachine.GetString("SOFTWARE\Wow6432Node\VapourSynth", "Plugins64").FixDir
+                If p.Script.Engine = ScriptEngine.AviSynth Then
+                    Return Registry.LocalMachine.GetString("SOFTWARE\AviSynth", "plugindir+").FixDir
+                Else
+                    Return Registry.LocalMachine.GetString("SOFTWARE\Wow6432Node\VapourSynth", "Plugins64").FixDir
+                End If
             End If
         End Get
     End Property
@@ -177,6 +185,9 @@ Public Class Folder
 
                     SettingsValue = dir.FixDir
                     Registry.CurrentUser.Write("Software\StaxRip\SettingsLocation", Folder.Startup, SettingsValue)
+
+                    DirectoryHelp.Create(SettingsValue + "Plugins\AviSynth")
+                    DirectoryHelp.Create(SettingsValue + "Plugins\VapourSynth")
                 End If
             End If
 
@@ -234,7 +245,7 @@ Public Class Folder
 
                 Dim remux As New Project
                 remux.Init()
-                remux.Script.Filters(0) = VideoFilter.GetDefault("Source", "DSS2")
+                remux.Script.Filters(0) = fastLoad.Script.Filters(0).GetCopy
                 remux.DemuxAudio = DemuxMode.None
                 remux.DemuxSubtitles = DemuxMode.None
                 remux.VideoEncoder = New NullEncoder
@@ -793,39 +804,6 @@ Public Class StringPair
     End Function
 End Class
 
-Public Class Misc
-    Public Shared IsAdmin As Boolean = New WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)
-
-    Shared Sub PlayAudioFile(path As String, volume As Integer)
-        Try
-            Static r As New Reflector("WMPlayer.OCX.7")
-            Dim s = r.Invoke("settings", BindingFlags.GetProperty)
-            s.Invoke("volume", BindingFlags.SetProperty, volume)
-            s.Invoke("setMode", "loop", False)
-            r.Invoke("URL", BindingFlags.SetProperty, path)
-            r.Invoke("controls", BindingFlags.GetProperty).Invoke("play")
-        Catch ex As Exception
-            g.ShowException(ex)
-        End Try
-    End Sub
-
-    Shared Sub SendPaste(value As String)
-        Dim tmp = Clipboard.GetText()
-        value.ToClipboard()
-        SendKeys.SendWait("^v")
-        tmp.ToClipboard()
-    End Sub
-
-    Shared Function Validate(value As String, pattern As String) As Boolean
-        If Not Regex.IsMatch(value, pattern) Then
-            MsgWarn("""" + value + """ is no valid input.")
-            Return False
-        End If
-
-        Return True
-    End Function
-End Class
-
 Public Class ErrorAbortException
     Inherits ApplicationException
 
@@ -1067,11 +1045,11 @@ Public Class CommandManager
             Dim attributes = DirectCast(i.GetCustomAttributes(GetType(CommandAttribute), False), CommandAttribute())
 
             If attributes.Length > 0 Then
-                Dim c As New Command
-                c.MethodInfo = i
-                c.Attribute = attributes(0)
-                c.Object = obj
-                AddCommand(c)
+                Dim cmd As New Command
+                cmd.MethodInfo = i
+                cmd.Attribute = attributes(0)
+                cmd.Object = obj
+                AddCommand(cmd)
             End If
         Next
     End Sub
@@ -1424,7 +1402,10 @@ Public Class PowerRequest
 
         If CurrentPowerRequest = IntPtr.Zero Then
             Dim err = Marshal.GetLastWin32Error()
-            If err <> 0 Then Throw New Win32Exception(err)
+
+            If err <> 0 Then
+                Throw New Win32Exception(err)
+            End If
         End If
 
         Dim success = PowerSetRequest(CurrentPowerRequest, PowerRequestType.PowerRequestSystemRequired)
@@ -1432,7 +1413,10 @@ Public Class PowerRequest
         If Not success Then
             CurrentPowerRequest = IntPtr.Zero
             Dim err = Marshal.GetLastWin32Error()
-            If err <> 0 Then Throw New Win32Exception(err)
+
+            If err <> 0 Then
+                Throw New Win32Exception(err)
+            End If
         End If
     End Sub
 
@@ -1443,7 +1427,10 @@ Public Class PowerRequest
             If Not success Then
                 CurrentPowerRequest = IntPtr.Zero
                 Dim err = Marshal.GetLastWin32Error()
-                If err <> 0 Then Throw New Win32Exception(err)
+
+                If err <> 0 Then
+                    Throw New Win32Exception(err)
+                End If
             Else
                 CurrentPowerRequest = IntPtr.Zero
             End If
