@@ -313,18 +313,16 @@ Public Class x265Params
         .Options = {"None", "PSNR", "SSIM", "Grain", "Fast Decode", "Zero Latency", "Animation"}}
 
     Property PipingToolAVS As New OptionParam With {
-        .Text = "Piping Tool",
+        .Text = "Pipe",
         .Name = "PipingToolAVS",
         .VisibleFunc = Function() p.Script.Engine = ScriptEngine.AviSynth,
-        .Options = {"Automatic", "None", "avs2pipemod", "ffmpeg"},
-        .Values = {"auto", "none", "avs2pipemod", "ffmpeg"}}
+        .Options = {"Automatic", "None", "avs2pipemod", "ffmpeg"}}
 
     Property PipingToolVS As New OptionParam With {
-        .Text = "Piping Tool",
+        .Text = "Pipe",
         .Name = "PipingToolVS",
         .VisibleFunc = Function() p.Script.Engine = ScriptEngine.VapourSynth,
-        .Options = {"Automatic", "None", "vspipe", "ffmpeg"},
-        .Values = {"auto", "none", "vspipe", "ffmpeg"}}
+        .Options = {"Automatic", "None", "vspipe", "ffmpeg"}}
 
     Property chunkStart As New NumParam With {
         .Switch = "--chunk-start",
@@ -890,6 +888,14 @@ Public Class x265Params
         .Switches = {"-f"},
         .Text = "Frames"}
 
+    Property RSkip As New OptionParam With {
+        .Switch = "--rskip",
+        .Text = "Recursion Skip",
+        .Expand = True,
+        .Options = {"0 - Disabled", "1 - RD Level 0-4 Neighbour costs and CU homogenity, RD Level 5-6 Comparison with inter2Nx2N", "2 - RD Level 0-6 CU edge denstiy"},
+        .Values = {"0", "1", "2"},
+        .Init = 1}
+
     Overrides ReadOnly Property Items As List(Of CommandLineParam)
         Get
             If ItemsValue Is Nothing Then
@@ -908,18 +914,16 @@ Public Class x265Params
                     New OptionParam With {.Switch = "--refine-mv", .Text = "Refine MV", .Expand = True, .IntegerValue = True, .Options = {"Disabled", "Level 1: Search around scaled MV", "Level 2: Level 1 + Search around best AMVP cand", "Level 3: Level 2 + Search around the other AMVP cand"}},
                     New OptionParam With {.Switch = "--analysis-save-reuse-level", .Text = "Save Reuse Level", .Expand = True, .IntegerValue = True, .Options = {" 0 - Default", " 1 - Lookahead information", " 2 - Level 1 + intra/inter modes, ref's", " 3 - Level 1 + intra/inter modes, ref's", " 4 - Level 1 + intra/inter modes, ref's", " 5 - Level 2 + rect-amp", " 6 - Level 2 + rect-amp", " 7 - Level 5 + AVC size CU refinement", " 8 - Level 5 + AVC size Full CU analysis-info", " 9 - Level 5 + AVC size Full CU analysis-info", "10 - Level 5 + Full CU analysis-info"}},
                     New OptionParam With {.Switch = "--analysis-load-reuse-level", .Text = "Load Reuse Level", .Expand = True, .IntegerValue = True, .Options = {" 0 - Default", " 1 - Lookahead information", " 2 - Level 1 + intra/inter modes, ref's", " 3 - Level 1 + intra/inter modes, ref's", " 4 - Level 1 + intra/inter modes, ref's", " 5 - Level 2 + rect-amp", " 6 - Level 2 + rect-amp", " 7 - Level 5 + AVC size CU refinement", " 8 - Level 5 + AVC size Full CU analysis-info", " 9 - Level 5 + AVC size Full CU analysis-info", "10 - Level 5 + Full CU analysis-info"}},
-                    New OptionParam With {.Switch = "--rskip", .Text = "Recursion Skip", .Expand = True, .Options = {"Undefined", "0 - Disabled", "1 - RD Level 0-4 Neighbour costs, RD Level 5-6 Comparison with inter2Nx2N", "2 - RD Level 0-6 CU edge denstiy", "3 - RD Level 0-6 CU edge denstiy with forceful skip for lower levels of CTU"}, .Values = {"", "0", "1", "2", "3"}},
+                    RSkip,
+                    New NumParam With {.Switch = "--rskip-edge-threshold", .Text = "RSkip Edge Threshold, requires RSkip Mode 2", .Init = 5, .Config = {0, 100}},
                     MinCuSize, MaxCuSize, MaxTuSize, LimitRefs)
                 Add("Analysis 2",
                     New NumParam With {.Switch = "--analysis-reuse-level", .Text = "Refine Level", .Config = {1, 10}, .Init = 5},
                     New NumParam With {.Switch = "--scale-factor", .Text = "Scale Factor"},
-                    LimitTU,
-                    TUintra, TUinter, rdoqLevel,
-                    PsyRDOQ,
+                    LimitTU, TUintra, TUinter, rdoqLevel, PsyRDOQ,
                     New NumParam With {.Switch = "--dynamic-rd", .Text = "Dynamic RD", .Config = {0, 4}},
                     New NumParam With {.Switch = "--refine-intra", .Text = "Refine Intra", .Config = {0, 4}},
                     New NumParam With {.Switch = "--refine-inter", .Text = "Refine Inter", .Config = {0, 3}},
-                    New NumParam With {.Switch = "--rskip-edge-threshold", .Text = "RSkip Edge Threshold", .Init = 5, .Config = {0, 100}},
                     qpadaptationrange)
                 Add("Analysis 3", Rect, AMP,
                     New BoolParam With {.Switch = "--tskip", .Text = "Enable evaluation of transform skip coding for 4x4 TU coded blocks"},
@@ -1033,11 +1037,12 @@ Public Class x265Params
                     New BoolParam With {.Switch = "--multi-pass-opt-rps", .Init = False, .Text = "Enable Storing", .Help = "Enable Storing commonly used RPS in SPS in multi pass mode"},
                     New BoolParam With {.Switch = "--opt-cu-delta-qp", .Text = "Optimize CU level QPs", .Help = "Optimize CU level QPs pulling up lower QPs close to meanQP", .Init = False})
                 Add("Input/Output",
+                    Decoder, PipingToolAVS, PipingToolVS,
                     New OptionParam With {.Switch = "--input-depth", .Text = "Input Depth", .Options = {"Automatic", "8", "10", "12", "14", "16"}},
                     New OptionParam With {.Switch = "--input-csp", .Text = "Input CSP", .Options = {"Automatic", "I400", "I420", "I422", "I444", "NV12", "NV16"}},
-                    New OptionParam With {.Switch = "--interlace", .Text = "Interlace", .Options = {"Progressive", "Top Field First", "Bottom Field First"}, .Values = {"", "tff", "bff"}},
                     New OptionParam With {.Switch = "--fps", .Text = "Frame Rate", .Options = {"Automatic", "24000/1001", "24", "25", "30000/1001", "30", "50", "60000/1001", "60"}},
-                    Frames, chunkStart, chunkEnd,
+                    New OptionParam With {.Switch = "--interlace", .Text = "Interlace", .Options = {"Progressive", "Top Field First", "Bottom Field First"}, .Values = {"", "tff", "bff"}},
+                    Chunks, chunkStart, chunkEnd, Frames,
                     New NumParam With {.Switch = "--seek", .Text = "Seek"},
                     New NumParam With {.Switch = "--dup-threshold", .Text = "Dup. Threshold", .Init = 70, .Config = {1, 99}},
                     New BoolParam With {.Switch = "--dither", .Text = "Dither (High Quality Downscaling)"},
@@ -1055,7 +1060,7 @@ Public Class x265Params
                     New StringParam With {.Switch = "--abr-ladder", .Text = "ABR Ladder File", .BrowseFile = True},
                     New StringParam With {.Switch = "--scaling-list", .Text = "Scaling List"},
                     New OptionParam With {.Switch = "--high-tier", .NoSwitch = "--no-high-tier", .Text = "High Tier", .Options = {"Undefined", "Yes", "No"}, .Values = {"", "--high-tier", "--no-high-tier"}},
-                    Decoder, PipingToolAVS, PipingToolVS, Chunks, CompCheck, CompCheckAimedQuality, PsyRD,
+                    CompCheck, CompCheckAimedQuality, PsyRD,
                     New NumParam With {.Switch = "--recon-depth", .Text = "Recon Depth"},
                     RDpenalty, MaxAuSizeFactor)
                 Add("Other 2",
@@ -1144,6 +1149,7 @@ Public Class x265Params
         ApplyTuneDefaultValues()
 
         Dim sb As New StringBuilder
+        Dim pipeTool = If(p.Script.Engine = ScriptEngine.AviSynth, PipingToolAVS, PipingToolVS).ValueText
 
         If includePaths AndAlso includeExecutable Then
             Dim isCropped = CInt(p.CropLeft Or p.CropTop Or p.CropRight Or p.CropBottom) <> 0 AndAlso
@@ -1152,9 +1158,8 @@ Public Class x265Params
             Select Case Decoder.ValueText
                 Case "script"
                     Dim pipeString = ""
-                    Dim pipeTool = If(p.Script.Engine = ScriptEngine.AviSynth, PipingToolAVS, PipingToolVS).ValueText
 
-                    If pipeTool = "auto" OrElse endFrame <> 0 Then
+                    If pipeTool = "automatic" OrElse endFrame <> 0 Then
                         If p.Script.Engine = ScriptEngine.AviSynth Then
                             pipeTool = "avs2pipemod"
                         Else
@@ -1170,7 +1175,13 @@ Public Class x265Params
                                 chunk = $" -trim={startFrame},{endFrame}"
                             End If
 
-                            pipeString = Package.avs2pipemod.Path.Escape + chunk + " -y4mp " + script.Path.Escape + " | "
+                            Dim dll As String
+
+                            If FrameServerHelp.IsAviSynthPortableUsed Then
+                                dll = " -dll=" + Package.AviSynth.Path.Escape
+                            End If
+
+                            pipeString = Package.avs2pipemod.Path.Escape + dll + chunk + " -y4mp " + script.Path.Escape + " | "
                         Case "vspipe"
                             Dim chunk As String
 
@@ -1239,9 +1250,7 @@ Public Class x265Params
         End If
 
         If includePaths Then
-            Dim pipingTool = If(p.Script.Engine = ScriptEngine.AviSynth, PipingToolAVS, PipingToolVS)
-
-            If pipingTool.ValueText <> "none" Then
+            If pipeTool <> "none" Then
                 If Frames.Value = 0 AndAlso Not IsCustom(pass, "--frames") Then
                     If Chunks.Value = 1 Then
                         sb.Append(" --frames " & script.GetFrameCount)
@@ -1257,8 +1266,7 @@ Public Class x265Params
                 sb.Append(" --stats " + (targetPath.DirAndBase + chunkName + ".stats").Escape)
             End If
 
-            Dim pipeTool = If(p.Script.Engine = ScriptEngine.AviSynth, PipingToolAVS, PipingToolVS)
-            Dim input = If(pipeTool.ValueText = "none", script.Path.Escape, "-")
+            Dim input = If(pipeTool = "none", script.Path.Escape, "-")
 
             If (Mode.Value = x265RateMode.ThreePass AndAlso pass < 3) OrElse
                 Mode.Value = x265RateMode.TwoPass AndAlso pass = 1 Then
@@ -1301,6 +1309,8 @@ Public Class x265Params
     Sub ApplyPresetValues()
         AQmode.Value = 2
         AQStrength.Value = 1
+        CUtree.Value = True
+        Deblock.Value = True
         DeblockA.Value = 0
         DeblockB.Value = 0
         FrameThreads.Value = 0
@@ -1315,6 +1325,7 @@ Public Class x265Params
         PsyRD.Value = 2.0
         PsyRDOQ.Value = 0
         QComp.Value = 0.6
+        RSkip.Value = 1
 
         Select Case Preset.Value
             Case 0 'ultrafast
@@ -1325,8 +1336,6 @@ Public Class x265Params
                 BAdapt.Value = 0
                 BFrames.Value = 3
                 BIntra.Value = False
-                CUtree.Value = False
-                Deblock.Value = True
                 EarlySkip.Value = True
                 FastIntra.Value = True
                 LimitRefs.Value = 0
@@ -1355,8 +1364,6 @@ Public Class x265Params
                 BAdapt.Value = 0
                 BFrames.Value = 3
                 BIntra.Value = False
-                CUtree.Value = False
-                Deblock.Value = True
                 EarlySkip.Value = True
                 FastIntra.Value = True
                 LimitRefs.Value = 0
@@ -1382,11 +1389,8 @@ Public Class x265Params
                 BAdapt.Value = 0
                 BFrames.Value = 4
                 BIntra.Value = False
-                CUtree.Value = False
-                Deblock.Value = True
                 EarlySkip.Value = True
                 FastIntra.Value = True
-                MaxCuSize.Value = 1
                 MaxMerge.Value = 2
                 MErange.Value = 57
                 RCLookahead.Value = 15
@@ -1408,8 +1412,6 @@ Public Class x265Params
                 BAdapt.Value = 0
                 BFrames.Value = 4
                 BIntra.Value = False
-                CUtree.Value = False
-                Deblock.Value = True
                 EarlySkip.Value = True
                 FastIntra.Value = True
                 MaxMerge.Value = 2
@@ -1430,11 +1432,9 @@ Public Class x265Params
             Case 4 'fast
                 [Me].Value = 1
                 AMP.Value = False
-                BAdapt.Value = 2
+                BAdapt.Value = 0
                 BFrames.Value = 4
                 BIntra.Value = False
-                CUtree.Value = True
-                Deblock.Value = True
                 EarlySkip.Value = False
                 FastIntra.Value = True
                 MaxMerge.Value = 2
@@ -1458,8 +1458,6 @@ Public Class x265Params
                 BAdapt.Value = 2
                 BFrames.Value = 4
                 BIntra.Value = False
-                CUtree.Value = True
-                Deblock.Value = True
                 EarlySkip.Value = True
                 FastIntra.Value = False
                 MaxMerge.Value = 2
@@ -1483,8 +1481,6 @@ Public Class x265Params
                 BAdapt.Value = 2
                 BFrames.Value = 4
                 BIntra.Value = False
-                CUtree.Value = True
-                Deblock.Value = True
                 EarlySkip.Value = False
                 FastIntra.Value = False
                 LimitModes.Value = True
@@ -1511,22 +1507,20 @@ Public Class x265Params
                 BAdapt.Value = 2
                 BFrames.Value = 8
                 BIntra.Value = True
-                CUtree.Value = True
-                Deblock.Value = True
                 EarlySkip.Value = False
                 FastIntra.Value = False
                 LimitModes.Value = True
                 LimitRefs.Value = 0
                 LimitTU.Value = 4
-                LookaheadSlices.Value = 4
-                MaxMerge.Value = 5
+                LookaheadSlices.Value = 1
+                MaxMerge.Value = 4
                 MErange.Value = 57
                 PsyRDOQ.Value = 1
                 RCLookahead.Value = 40
                 RD.Value = 6
                 rdoqLevel.Value = 2
                 Rect.Value = True
-                Ref.Value = 4
+                Ref.Value = 5
                 SAO.Value = True
                 Scenecut.Value = 40
                 SignHide.Value = True
@@ -1541,13 +1535,11 @@ Public Class x265Params
                 BAdapt.Value = 2
                 BFrames.Value = 8
                 BIntra.Value = True
-                CUtree.Value = True
-                Deblock.Value = True
                 EarlySkip.Value = False
                 FastIntra.Value = False
                 LimitRefs.Value = 0
                 LimitTU.Value = 4
-                LookaheadSlices.Value = 4
+                LookaheadSlices.Value = 1
                 MaxMerge.Value = 5
                 MErange.Value = 57
                 PsyRDOQ.Value = 1
@@ -1570,12 +1562,10 @@ Public Class x265Params
                 BAdapt.Value = 2
                 BFrames.Value = 8
                 BIntra.Value = True
-                CUtree.Value = True
-                Deblock.Value = True
                 EarlySkip.Value = False
                 FastIntra.Value = False
                 LimitRefs.Value = 0
-                LookaheadSlices.Value = 0
+                LookaheadSlices.Value = 1
                 MaxMerge.Value = 5
                 MErange.Value = 92
                 RCLookahead.Value = 60
@@ -1583,6 +1573,7 @@ Public Class x265Params
                 rdoqLevel.Value = 2
                 Rect.Value = True
                 Ref.Value = 5
+                RSkip.Value = 0
                 SAO.Value = True
                 Scenecut.Value = 40
                 SignHide.Value = True
@@ -1597,6 +1588,8 @@ Public Class x265Params
     Sub ApplyPresetDefaultValues()
         AQmode.DefaultValue = 2
         AQStrength.DefaultValue = 1
+        CUtree.DefaultValue = True
+        Deblock.DefaultValue = True
         DeblockA.DefaultValue = 0
         DeblockB.DefaultValue = 0
         FrameThreads.DefaultValue = 0
@@ -1611,6 +1604,7 @@ Public Class x265Params
         PsyRD.DefaultValue = 2.0
         PsyRDOQ.DefaultValue = 0
         QComp.DefaultValue = 0.6
+        RSkip.DefaultValue = 1
 
         Select Case Preset.Value
             Case 0 'ultrafast
@@ -1621,8 +1615,6 @@ Public Class x265Params
                 BAdapt.DefaultValue = 0
                 BFrames.DefaultValue = 3
                 BIntra.DefaultValue = False
-                CUtree.DefaultValue = False
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = True
                 FastIntra.DefaultValue = True
                 LimitRefs.DefaultValue = 0
@@ -1651,8 +1643,6 @@ Public Class x265Params
                 BAdapt.DefaultValue = 0
                 BFrames.DefaultValue = 3
                 BIntra.DefaultValue = False
-                CUtree.DefaultValue = False
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = True
                 FastIntra.DefaultValue = True
                 LimitRefs.DefaultValue = 0
@@ -1678,11 +1668,8 @@ Public Class x265Params
                 BAdapt.DefaultValue = 0
                 BFrames.DefaultValue = 4
                 BIntra.DefaultValue = False
-                CUtree.DefaultValue = False
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = True
                 FastIntra.DefaultValue = True
-                MaxCuSize.DefaultValue = 1
                 MaxMerge.DefaultValue = 2
                 MErange.DefaultValue = 57
                 RCLookahead.DefaultValue = 15
@@ -1704,8 +1691,6 @@ Public Class x265Params
                 BAdapt.DefaultValue = 0
                 BFrames.DefaultValue = 4
                 BIntra.DefaultValue = False
-                CUtree.DefaultValue = False
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = True
                 FastIntra.DefaultValue = True
                 MaxMerge.DefaultValue = 2
@@ -1726,11 +1711,9 @@ Public Class x265Params
             Case 4 'fast
                 [Me].DefaultValue = 1
                 AMP.DefaultValue = False
-                BAdapt.DefaultValue = 2
+                BAdapt.DefaultValue = 0
                 BFrames.DefaultValue = 4
                 BIntra.DefaultValue = False
-                CUtree.DefaultValue = True
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = False
                 FastIntra.DefaultValue = True
                 MaxMerge.DefaultValue = 2
@@ -1754,8 +1737,6 @@ Public Class x265Params
                 BAdapt.DefaultValue = 2
                 BFrames.DefaultValue = 4
                 BIntra.DefaultValue = False
-                CUtree.DefaultValue = True
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = True
                 FastIntra.DefaultValue = False
                 MaxMerge.DefaultValue = 2
@@ -1779,8 +1760,6 @@ Public Class x265Params
                 BAdapt.DefaultValue = 2
                 BFrames.DefaultValue = 4
                 BIntra.DefaultValue = False
-                CUtree.DefaultValue = True
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = False
                 FastIntra.DefaultValue = False
                 LimitModes.DefaultValue = True
@@ -1807,22 +1786,20 @@ Public Class x265Params
                 BAdapt.DefaultValue = 2
                 BFrames.DefaultValue = 8
                 BIntra.DefaultValue = True
-                CUtree.DefaultValue = True
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = False
                 FastIntra.DefaultValue = False
                 LimitModes.DefaultValue = True
                 LimitRefs.DefaultValue = 0
                 LimitTU.DefaultValue = 4
-                LookaheadSlices.DefaultValue = 4
-                MaxMerge.DefaultValue = 5
+                LookaheadSlices.DefaultValue = 1
+                MaxMerge.DefaultValue = 4
                 MErange.DefaultValue = 57
                 PsyRDOQ.DefaultValue = 1
                 RCLookahead.DefaultValue = 40
                 RD.DefaultValue = 6
                 rdoqLevel.DefaultValue = 2
                 Rect.DefaultValue = True
-                Ref.DefaultValue = 4
+                Ref.DefaultValue = 5
                 SAO.DefaultValue = True
                 Scenecut.DefaultValue = 40
                 SignHide.DefaultValue = True
@@ -1837,12 +1814,10 @@ Public Class x265Params
                 BAdapt.DefaultValue = 2
                 BFrames.DefaultValue = 8
                 BIntra.DefaultValue = True
-                CUtree.DefaultValue = True
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = False
                 FastIntra.DefaultValue = False
                 LimitTU.DefaultValue = 4
-                LookaheadSlices.DefaultValue = 4
+                LookaheadSlices.DefaultValue = 1
                 MaxMerge.DefaultValue = 4
                 MErange.DefaultValue = 57
                 PsyRDOQ.DefaultValue = 1
@@ -1865,12 +1840,10 @@ Public Class x265Params
                 BAdapt.DefaultValue = 2
                 BFrames.DefaultValue = 8
                 BIntra.DefaultValue = True
-                CUtree.DefaultValue = True
-                Deblock.DefaultValue = True
                 EarlySkip.DefaultValue = False
                 FastIntra.DefaultValue = False
                 LimitRefs.DefaultValue = 0
-                LookaheadSlices.DefaultValue = 0
+                LookaheadSlices.DefaultValue = 1
                 MaxMerge.DefaultValue = 5
                 MErange.DefaultValue = 92
                 RCLookahead.DefaultValue = 60
@@ -1878,6 +1851,7 @@ Public Class x265Params
                 rdoqLevel.DefaultValue = 2
                 Rect.DefaultValue = True
                 Ref.DefaultValue = 5
+                RSkip.DefaultValue = 0
                 SAO.DefaultValue = True
                 Scenecut.DefaultValue = 40
                 SignHide.DefaultValue = True
@@ -1895,11 +1869,12 @@ Public Class x265Params
         ConstVBV.Value = False
 
         Select Case Tune.Value
-            Case 1 '"psnr"
+            Case 1 'psnr
                 AQStrength.Value = 0.0
                 PsyRD.Value = 0.0
                 PsyRDOQ.Value = 0.0
-            Case 2 '"ssim"
+                CUtree.Value = False
+            Case 2 'ssim
                 AQmode.Value = 2
                 PsyRD.Value = 0.0
                 PsyRDOQ.Value = 0.0
@@ -1912,28 +1887,29 @@ Public Class x265Params
                 RcGrain.Value = True
                 PsyRD.Value = 4
                 PsyRDOQ.Value = 10
+                RSkip.Value = 0
                 SAO.Value = False
                 ConstVBV.Value = True
-            Case 4 '"fastdecode"
+            Case 4 'fastdecode
                 Deblock.Value = False
                 SAO.Value = False
                 Weightp.Value = False
                 Weightb.Value = False
                 BIntra.Value = False
-            Case 5 '"zerolatency"
+            Case 5 'zerolatency
                 BAdapt.Value = 0
                 BFrames.Value = 0
                 RCLookahead.Value = 0
                 Scenecut.Value = 0
                 CUtree.Value = False
                 FrameThreads.Value = 1
-            Case 6 '"Animation"
+            Case 6 'Animation
                 PsyRD.Value = 0.4
                 AQStrength.Value = 0.4
                 Deblock.Value = True
                 DeblockA.Value = 1
                 DeblockB.Value = 1
-                BFrames.Value = 6
+                BFrames.Value += 2
         End Select
     End Sub
 
@@ -1943,11 +1919,12 @@ Public Class x265Params
         ConstVBV.DefaultValue = False
 
         Select Case Tune.Value
-            Case 1 '"psnr"
+            Case 1 'psnr
                 AQStrength.DefaultValue = 0.0
                 PsyRD.DefaultValue = 0.0
                 PsyRDOQ.DefaultValue = 0.0
-            Case 2 '"ssim"
+                CUtree.DefaultValue = False
+            Case 2 'ssim
                 AQmode.DefaultValue = 2
                 PsyRD.DefaultValue = 0.0
                 PsyRDOQ.DefaultValue = 0.0
@@ -1960,26 +1937,29 @@ Public Class x265Params
                 RcGrain.DefaultValue = True
                 PsyRD.DefaultValue = 4
                 PsyRDOQ.DefaultValue = 10
+                RSkip.DefaultValue = 0
                 SAO.DefaultValue = False
                 ConstVBV.DefaultValue = True
-            Case 4 '"fastdecode"
+            Case 4 'fastdecode
                 Deblock.DefaultValue = False
                 SAO.DefaultValue = False
                 Weightp.DefaultValue = False
                 Weightb.DefaultValue = False
                 BIntra.DefaultValue = False
-            Case 5 '"zerolatency"
+            Case 5 'zerolatency
                 BAdapt.DefaultValue = 0
                 BFrames.DefaultValue = 0
                 RCLookahead.DefaultValue = 0
                 Scenecut.DefaultValue = 0
                 CUtree.DefaultValue = False
                 FrameThreads.DefaultValue = 1
-            Case 6 '"Animation
+            Case 6 'Animation
                 PsyRD.DefaultValue = 0.4
                 AQStrength.DefaultValue = 0.4
-                Deblock.DefaultValue = False
-                BFrames.DefaultValue = 6
+                Deblock.DefaultValue = True
+                DeblockA.DefaultValue = 1
+                DeblockB.DefaultValue = 1
+                BFrames.DefaultValue += 2
         End Select
     End Sub
 

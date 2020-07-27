@@ -75,10 +75,17 @@ Public Class Calc
     End Function
 
     Shared Function GetVideoBitrate() As Double
-        If p.TargetSeconds = 0 Then Return 0
+        If p.TargetSeconds = 0 Then
+            Return 0
+        End If
+
         Dim kbytes = p.TargetSize * 1024 - GetAudioKBytes() - GetSubtitleKBytes() - GetOverheadKBytes()
         Dim ret = kbytes * 8 * 1.024 / p.TargetSeconds
-        If ret < 1 Then ret = 1
+
+        If ret < 1 Then
+            ret = 1
+        End If
+
         Return ret
     End Function
 
@@ -594,7 +601,10 @@ Public Class Language
                 l.Add(New Language(CultureInfo.InvariantCulture, True))
 
                 Dim current = l.Where(Function(a) a.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName).FirstOrDefault
-                If current Is Nothing Then l.Add(CurrentCulture)
+
+                If current Is Nothing Then
+                    l.Add(CurrentCulture)
+                End If
 
                 l.Sort()
 
@@ -1453,11 +1463,11 @@ Public Enum ContainerStreamType
 End Enum
 
 Public Class FileTypes
-    Shared Property AudioRaw As String() = {"thd", "aac", "eac3"}
-    Shared Property Audio As String() = {"flac", "dtshd", "dtsma", "dtshr", "thd", "thd+ac3", "true-hd", "truehd", "aac", "ac3", "dts", "eac3", "m4a", "mka", "mp2", "mp3", "mpa", "opus", "wav", "w64"}
+    Shared Property AudioRaw As String() = {"thd", "aac", "ec3", "eac3"}
+    Shared Property Audio As String() = {"flac", "dtshd", "dtsma", "dtshr", "thd", "thd+ac3", "true-hd", "truehd", "aac", "ac3", "dts", "ec3", "eac3", "m4a", "mka", "mp2", "mp3", "mpa", "opus", "wav", "w64"}
     Shared Property VideoAudio As String() = {"avi", "mp4", "mkv", "divx", "flv", "mov", "mpeg", "mpg", "ts", "m2ts", "vob", "webm", "wmv", "pva", "ogg", "ogm", "m4v", "3gp"}
     Shared Property DGDecNVInput As String() = {"264", "h264", "265", "h265", "avc", "hevc", "hvc", "mkv", "mp4", "m4v", "mpg", "vob", "ts", "m2ts", "mts", "m2t", "mpv", "m2v"}
-    Shared Property eac3toInput As String() = {"dts", "dtshd", "dtshr", "dtsma", "evo", "vob", "ts", "m2ts", "wav", "w64", "pcm", "raw", "flac", "ac3", "eac3", "thd", "thd+ac3", "mlp", "mp2", "mp3", "mpa"}
+    Shared Property eac3toInput As String() = {"dts", "dtshd", "dtshr", "dtsma", "evo", "vob", "ts", "m2ts", "wav", "w64", "pcm", "raw", "flac", "ac3", "ec3", "eac3", "thd", "thd+ac3", "mlp", "mp2", "mp3", "mpa"}
     Shared Property NicAudioInput As String() = {"wav", "mp2", "mpa", "mp3", "ac3", "dts"}
     Shared Property SubtitleExludingContainers As String() = {"srt", "ass", "idx", "sup", "ttxt", "ssa", "smi"}
     Shared Property SubtitleSingle As String() = {"srt", "ass", "sup", "ttxt", "ssa", "smi"}
@@ -1469,6 +1479,7 @@ Public Class FileTypes
     Shared Property VideoRaw As String() = {"264", "265", "h264", "h265", "avc", "hevc", "hvc", "ivf"}
     Shared Property VideoText As String() = {"d2v", "dgi", "dga", "dgim", "avs", "vpy"}
     Shared Property VideoDemuxOutput As String() = {"mpg", "h264", "avi", "h265"}
+    Shared Property Image As String() = {"bmp", "jpg", "png", "gif", "tif", "jpe", "jpeg", "psd"}
 
     Shared Function GetFilter(values As IEnumerable(Of String)) As String
         Return "*." + values.Join(";*.") + "|*." + values.Join(";*.") + "|All Files|*.*"

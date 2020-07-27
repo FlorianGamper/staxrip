@@ -1,6 +1,8 @@
 
 $ErrorActionPreference = 'Stop'
 
+Get-ChildItem (Join-Path $PSScriptRoot bin) AviSynth.dll -Recurse | where Length -eq 0 | Remove-Item
+
 $include = @(
     '*.config',
     '*.cpp',
@@ -79,7 +81,7 @@ Copy-Item ($PSScriptRoot + '\bin') $targetDir -Recurse
 
 $patterns = @(
     '*\_StaxRip.log',
-    '*\AVSMeter.ini',
+    '*\AVSMeter64.ini',
     '*\chapterEditor.ini',
     '*\d2vwitch.ini'
     '*\Debug.log',

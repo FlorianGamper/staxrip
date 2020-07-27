@@ -1,6 +1,76 @@
 
-2.1.3.2 Beta (not yet available)
+2.1.3.8 Beta (not yet available)
 ============
+
+- mkvtoolnix 48
+- ec3 file extension support for eac3 files.
+- R210/V210 video output using ffmpeg.
+- Include beta versions for update checker and show changelog (Dendraspis)
+- The final assistant tip supports SHIFT key to add the job at the top of the job list and
+  CTRL to prevent showing the jobs dialog. Right-click shows a menu. (Dendraspis)
+- allow to open video files with relative paths on the command line (Dendraspis)
+- Create F6 shortcut for Jobs button on Processing dialog (Dendraspis)
+- Create F7 shortcut for Log dialog
+- 4 commands added to open each source type separately (Dendraspis)
+- x265 Presets and Tunes fixes (Dendraspis)
+
+
+2.1.3.7 Beta
+============
+
+- AviSynth soft link fix.
+- DGIndex re-enabled by default for VOB/MPG.
+
+
+2.1.3.6 Beta
+============
+
+- Incorrect command line using VapourSynth and x265.
+
+
+2.1.3.5 Beta
+============
+
+- x264 encoder by default uses avs input.
+- x264 encoder has pipe options for raw format.
+- Flicker in Video Comparison fixed.
+- New command AddBatchJob.
+- AviSynth ImageSource support.
+- x264 M-0.160.3009-4c9b076-gcc11 Patman
+- QSVEnc 4.04
+- VCEEnc 6.02
+- AVSMeter 3.0.2.0
+
+
+2.1.3.4 Beta
+============
+
+- New setting to use AviSynth portable even when AviSynth
+  is installed, portable mode is enabled by default.
+- ffmpeg EAC3 encoding support.
+- Default AAC encoder changed from eac3to to qaac.
+- In batch mode script error handling was fixed.
+- ffmpeg muxed audio even for No Muxing profile.
+- AviSynth 3.6.1
+- ffmpeg N-98276-g1d5d8a30b4-g842bc312ad-gcc10.1.0 Patman
+- MP4Box 1.0.0-rev16-g10dd6533a-gcc11.0.0 Patman
+- SVT-AV1 0.8.3-57-gba72bc85-msvc1926 Patman
+- qaac 2.69
+- Bwdif r2
+
+
+2.1.3.2 Beta
+============
+
+- AviSynth/VapourSynth plugin auto load folder support in portable mode (Main Menu > Folders > Plugins)
+- ffmpeg muxer uses always -strict -2, it enables TrueHD in MP4
+- x264 M-0.160.3009-4c9b076-gcc11 Patman
+- NVEnc 5.06
+- MediaInfo.NET 6.5.0.0
+- Subtitle Edit 3.5.1.5
+- TMM2 0.1.4
+- AviSynthShader 1.6.6
+
 
 2.1.3.1 Beta
 ============

@@ -1,3 +1,12 @@
+.. option:: -AddBatchJob:sourcefile
+
+    Adds a batch job.
+
+.. list-table::
+    :widths: auto
+
+    * - sourcefile <string>
+
 .. option:: -AddFilter:active,name,category,script
 
     Adds a filter at the end of the script.
@@ -161,7 +170,7 @@
 
 .. option:: -PlaySound:FilePath,Volume
 
-    Plays a mp3, wav Or wmv sound file.
+    Plays audio file.
 
 .. list-table::
     :widths: auto

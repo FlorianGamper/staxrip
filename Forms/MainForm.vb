@@ -29,7 +29,7 @@ Public Class MainForm
     Public WithEvents tbAudioFile1 As StaxRip.UI.TextBoxEx
     Public WithEvents llEditAudio1 As ButtonLabel
     Public WithEvents llEditAudio0 As ButtonLabel
-    Public WithEvents bnNext As System.Windows.Forms.Button
+    Public WithEvents bnNext As ButtonEx
     Public WithEvents tbSourceFile As StaxRip.UI.TextBoxEx
     Public WithEvents tbTargetFile As StaxRip.UI.TextBoxEx
     Public WithEvents gbAssistant As System.Windows.Forms.GroupBox
@@ -91,7 +91,7 @@ Public Class MainForm
     '<System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
-        Me.bnNext = New System.Windows.Forms.Button()
+        Me.bnNext = New ButtonEx()
         Me.llEditAudio0 = New StaxRip.UI.ButtonLabel()
         Me.gbAssistant = New System.Windows.Forms.GroupBox()
         Me.tlpAssistant = New System.Windows.Forms.TableLayoutPanel()
@@ -174,12 +174,11 @@ Public Class MainForm
         '
         Me.bnNext.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.bnNext.Cursor = System.Windows.Forms.Cursors.Default
-        Me.bnNext.Location = New System.Drawing.Point(1863, 33)
         Me.bnNext.Margin = New System.Windows.Forms.Padding(0, 0, 6, 0)
         Me.bnNext.Name = "bnNext"
-        Me.bnNext.Size = New System.Drawing.Size(150, 70)
+        Me.bnNext.Size = New System.Drawing.Size(240, 100)
         Me.bnNext.TabIndex = 39
-        Me.bnNext.Text = " Next "
+        Me.bnNext.Text = "Next"
         '
         'llEditAudio0
         '
@@ -1061,6 +1060,7 @@ Public Class MainForm
     Private SourceFileMenu As ContextMenuStripEx
     Private Audio0FileMenu As ContextMenuStripEx
     Private Audio1FileMenu As ContextMenuStripEx
+    Private NextContextMenuStrip As ContextMenuStripEx
     Private BlockAviSynthItemCheck As Boolean
     Private CanChangeSize As Boolean = True
     Private CanChangeBitrate As Boolean = True
@@ -1117,6 +1117,8 @@ Public Class MainForm
         SourceFileMenu = New ContextMenuStripEx(components)
         Audio0FileMenu = New ContextMenuStripEx(components)
         Audio1FileMenu = New ContextMenuStripEx(components)
+        Audio1FileMenu = New ContextMenuStripEx(components)
+        NextContextMenuStrip = New ContextMenuStripEx(components)
 
         tbTargetFile.ContextMenuStrip = TargetFileMenu
         tbSourceFile.ContextMenuStrip = SourceFileMenu
@@ -1154,6 +1156,17 @@ Public Class MainForm
         CustomSizeMenu.AddKeyDownHandler(Me)
         CustomSizeMenu.BuildMenu()
         SizeContextMenuStrip.ResumeLayout()
+
+        bnNext.AutoSize = True
+        bnNext.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        bnNext.MinimumSize = New Size(CInt(FontHeight * 3.5), CInt(FontHeight * 1.5))
+
+        NextContextMenuStrip.Add("Add to top and open Jobs", Sub() AddJob(True, 0))
+        NextContextMenuStrip.Add("Add to bottom and open Jobs", Sub() AddJob(True, -1))
+        NextContextMenuStrip.Add("-")
+        NextContextMenuStrip.Add("Add to top w/o opening Jobs", Sub() AddJob(False, 0))
+        NextContextMenuStrip.Add("Add to bottom w/o opening Jobs", Sub() AddJob(False, -1))
+
         g.SetRenderer(MenuStrip)
         SetMenuStyle()
     End Sub
@@ -1318,7 +1331,7 @@ Public Class MainForm
                 If iPath.Contains("_cut_") Then Continue For
                 If iPath.Contains("_out") Then Continue For
                 If Not g.IsSourceSame(iPath) Then Continue For
-                If hq AndAlso Not iPath.Ext.EqualsAny("dtsma", "thd", "eac3", "thd+ac3", "dtshr", "dtshd") Then Continue For
+                If hq AndAlso Not iPath.Ext.EqualsAny("dtsma", "thd", "ec3", "eac3", "thd+ac3", "dtshr", "dtshd") Then Continue For
 
                 If same AndAlso tbOther.Text <> "" AndAlso tbOther.Text.ExtFull <> iPath.ExtFull Then
                     Continue For
@@ -1542,6 +1555,22 @@ Public Class MainForm
         LoadProject(Folder.Template + name + ".srip")
     End Sub
 
+    <Command("Adds a batch job.")>
+    Sub AddBatchJob(sourcefile As String)
+        Dim batchFolder = Folder.Settings + "Batch Projects\"
+
+        If Not Directory.Exists(batchFolder) Then
+            Directory.CreateDirectory(batchFolder)
+        End If
+
+        Dim batchProject = ObjectHelp.GetCopy(Of Project)(p)
+        batchProject.BatchMode = True
+        batchProject.SourceFiles = {sourcefile}.ToList
+        Dim jobPath = batchFolder + sourcefile.Dir.Replace("\", "-").Replace(":", "-") + " " + p.TemplateName + " - " + sourcefile.FileName
+        SafeSerialization.Serialize(batchProject, jobPath)
+        JobManager.AddJob(sourcefile.Base, jobPath)
+    End Sub
+
     Sub LoadProject(path As String)
         Refresh()
 
@@ -1638,6 +1667,7 @@ Public Class MainForm
             If path.StartsWith(Folder.Template) Then
                 g.ProjectPath = Nothing
                 p.TemplateName = path.Base
+                p.BatchMode = False
             Else
                 g.ProjectPath = path
             End If
@@ -1807,6 +1837,8 @@ Public Class MainForm
     End Sub
 
     Sub OpenAnyFile(files As IEnumerable(Of String))
+        files = files.Select(Function(filePath) New FileInfo(filePath).FullName)
+
         If files(0).Ext = "srip" Then
             OpenProject(files(0))
         ElseIf FileTypes.Video.Contains(files(0).Ext.Lower) Then
@@ -1837,16 +1869,20 @@ Public Class MainForm
         AddHandler Disposed, Sub() FileHelp.Delete(recoverProjectPath)
 
         Try
+            files = files.Select(Function(filePath) New FileInfo(filePath).FullName).AsEnumerable()
+
             If g.ShowVideoSourceWarnings(files) Then
                 Throw New AbortException
             End If
+
+            FrameServerHelp.Init()
 
             For Each i In files
                 Dim name = i.FileName
 
                 If name.ToUpper Like "VTS_0#_0.VOB" Then
                     If MsgQuestion("Are you sure you want to open the file " + name + "," + BR +
-                           "the first VOB file usually contains a menu!") = DialogResult.Cancel Then
+                           "the first VOB file usually contains a menu.") = DialogResult.Cancel Then
 
                         Throw New AbortException
                     End If
@@ -1880,6 +1916,45 @@ Public Class MainForm
 
             p.SourceFiles = files.ToList
             p.SourceFile = files(0)
+
+            If p.SourceFile.Ext.EqualsAny(FileTypes.Image) Then
+                If p.SourceFile.Base(p.SourceFile.Base.Length - 1).IsDigit Then
+                    If p.Script.Engine = ScriptEngine.AviSynth Then
+                        Dim digitCount = 0
+
+                        For i = p.SourceFile.Base.Length - 1 To 0 Step -1
+                            If p.SourceFile.Base(i).IsDigit Then
+                                digitCount += 1
+                            End If
+                        Next
+
+                        Dim startText = p.SourceFile.Base.Substring(0, p.SourceFile.Base.Length - digitCount)
+                        Dim images As New List(Of String)
+                        Dim allFiles = Directory.GetFiles(p.SourceFile.Dir)
+
+                        For Each file In Directory.GetFiles(p.SourceFile.Dir)
+                            If file.Base.Length = p.SourceFile.Base.Length AndAlso
+                                file.Ext = p.SourceFile.Ext AndAlso file.Base.StartsWith(startText) Then
+
+                                images.Add(file)
+                            End If
+                        Next
+
+                        images.Sort()
+
+                        Dim filter = p.Script.GetFilter("Source")
+                        filter.Path = "Image"
+                        filter.Script = "ImageSource(""" + images(0).Dir + p.SourceFile.Base.Substring(0,
+                            p.SourceFile.Base.Length - digitCount) + "%0" & digitCount & "d." + p.SourceFile.Ext +
+                            """, " & images(0).Base.Substring(p.SourceFile.Base.Length - digitCount).ToInt &
+                            ", " & images(images.Count - 1).Base.Substring(p.SourceFile.Base.Length - digitCount).ToInt & ", 25)"
+                    End If
+                Else
+                    Dim filter = p.Script.GetFilter("Source")
+                    filter.Path = "Image"
+                    filter.Script = "ImageSource(""%source_file%"", 0, 1000, 25)"
+                End If
+            End If
 
             FiltersListView.IsLoading = True
 
@@ -2365,7 +2440,7 @@ Public Class MainForm
                 End If
 
                 p.Script.GetFilter("Source").Script += BR + "clip = clip.resize.Bicubic(matrix_s = '" + matrix + "', format = vs.YUV420P8)"
-            ElseIf editAVS AndAlso Not sourceFilter.Script.Contains("ConvertToYV12") AndAlso
+            ElseIf editAVS AndAlso Not sourceFilter.Script.ContainsAny("ConvertToYV12", "ConvertToYUV420") AndAlso
                 Not sourceFilter.Script.Contains("ConvertToYUV420") Then
 
                 p.Script.GetFilter("Source").Script += BR + "ConvertToYUV420()"
@@ -2524,9 +2599,9 @@ Public Class MainForm
         If Not p.SkippedAssistantTips.Contains(CurrentAssistantTipKey) Then
             If message <> "" Then
                 If message.Length > 130 Then
-                    laTip.Font = New Font(laTip.Font.FontFamily, 8 * s.UIScaleFactor)
+                    laTip.SetFontSize(8 * s.UIScaleFactor)
                 Else
-                    laTip.Font = New Font(laTip.Font.FontFamily, 9 * s.UIScaleFactor)
+                    laTip.SetFontSize(9 * s.UIScaleFactor)
                 End If
             End If
 
@@ -2694,7 +2769,7 @@ Public Class MainForm
             If Not param Is Nothing AndAlso param.Value > 0 AndAlso
                 Not p.Script.IsFilterActive("Resize", "Hardware Encoder") Then
 
-                If ProcessTip("In order to use an resize filter of the hardware encoder select 'Hardware Encoder' as resize filter from the filters menu.") Then
+                If ProcessTip("In order to use a resize filter of the hardware encoder select 'Hardware Encoder' as resize filter from the filters menu.") Then
                     gbAssistant.Text = "Invalid filter setting"
                     CanIgnoreTip = False
                     Return False
@@ -2993,8 +3068,8 @@ Public Class MainForm
 
         gbAssistant.Text = "Add Job"
 
-        If laTip.Font.Size <> 9 Then
-            laTip.Font = New Font(laTip.Font.FontFamily, 9 * s.UIScaleFactor)
+        If laTip.Font.Size <> (9 * s.UIScaleFactor) Then
+            laTip.SetFontSize(9 * s.UIScaleFactor)
         End If
 
         laTip.Text = "Click on the next button to add a job."
@@ -3063,86 +3138,6 @@ Public Class MainForm
         AudioTextChanged(tbAudioFile1, p.Audio1)
     End Sub
 
-    Sub bnSkip_Click() Handles bnNext.Click
-        If Not CanIgnoreTip Then
-            MsgWarn("The current assistant warning cannot be skipped.")
-            Exit Sub
-        End If
-
-        If Not p.SkippedAssistantTips.Contains(CurrentAssistantTipKey) Then
-            p.SkippedAssistantTips.Add(CurrentAssistantTipKey)
-        End If
-
-        If Not g.VerifyRequirements() Then
-            Exit Sub
-        End If
-
-        If AssistantPassed Then
-            If AbortDueToLowDiskSpace() Then
-                Exit Sub
-            End If
-
-            If Not TypeOf p.VideoEncoder Is NullEncoder AndAlso File.Exists(p.VideoEncoder.OutputPath) Then
-                Select Case p.FileExistVideo
-                    Case FileExistMode.Ask
-                        Using td As New TaskDialog(Of String)
-                            td.MainInstruction = "An video encoding output file already exists"
-                            td.Content = "Would you like to skip video encoding and reuse the existing video encoder output file or would you like to re-encode and overwrite it?"
-                            td.AddCommand("Reuse", "skip")
-                            td.AddCommand("Re-encode", "encode")
-
-                            Select Case td.Show
-                                Case "skip"
-                                    p.SkipVideoEncoding = True
-                                Case "encode"
-                                    p.SkipVideoEncoding = False
-                                Case Else
-                                    Exit Sub
-                            End Select
-                        End Using
-                    Case FileExistMode.Overwrite
-                        p.SkipVideoEncoding = False
-                    Case FileExistMode.Skip
-                        p.SkipVideoEncoding = True
-                End Select
-            End If
-
-            If (p.Audio0.File <> "" AndAlso (TypeOf p.Audio0 Is GUIAudioProfile OrElse
-                TypeOf p.Audio0 Is BatchAudioProfile) AndAlso File.Exists(p.Audio0.GetOutputFile)) OrElse
-                (p.Audio1.File <> "" AndAlso (TypeOf p.Audio1 Is GUIAudioProfile OrElse
-                TypeOf p.Audio1 Is BatchAudioProfile) AndAlso File.Exists(p.Audio1.GetOutputFile)) Then
-
-                Select Case p.FileExistAudio
-                    Case FileExistMode.Ask
-                        Using td As New TaskDialog(Of String)
-                            td.MainInstruction = "An audio encoding output file already exists"
-                            td.Content = "Would you like to skip audio encoding and reuse existing audio encoding output files or would you like to re-encode and overwrite?"
-                            td.AddCommand("Reuse", "skip")
-                            td.AddCommand("Re-encode", "encode")
-
-                            Select Case td.Show
-                                Case "skip"
-                                    p.SkipAudioEncoding = True
-                                Case "encode"
-                                    p.SkipAudioEncoding = False
-                                Case Else
-                                    Exit Sub
-                            End Select
-                        End Using
-                    Case FileExistMode.Overwrite
-                        p.SkipAudioEncoding = False
-                    Case FileExistMode.Skip
-                        p.SkipAudioEncoding = True
-                End Select
-            End If
-
-            AddJob(False, Nothing)
-            ShowJobsDialog()
-        Else
-            Assistant()
-        End If
-    End Sub
-
     Function AbortDueToLowDiskSpace() As Boolean
         Try 'crashes with network shares
             If p.TargetFile = "" OrElse p.TargetFile.StartsWith("\\") Then
@@ -3154,8 +3149,8 @@ Public Class MainForm
             If di.AvailableFreeSpace / 1024 ^ 3 < s.MinimumDiskSpace Then
                 Using td As New TaskDialog(Of String)
                     td.MainInstruction = "Low Disk Space"
-                    td.Content = $"The target drive {Path.GetPathRoot(p.TargetFile)} has only {(di.AvailableFreeSpace / 1024 ^ 3).ToString("f2")} GB free disk space." + BR2 +
-                        "This message can be configured at:" + BR2 + "Tools > Settings > System > Minimum Disk Space"
+                    td.Content = $"The target drive {Path.GetPathRoot(p.TargetFile)} has only " +
+                                 $"{(di.AvailableFreeSpace / 1024 ^ 3).ToString("f2")} GB free disk space."
                     td.MainIcon = TaskDialogIcon.Warning
                     td.AddButton("Continue", "Continue")
                     td.AddButton("Abort", "Abort")
@@ -3172,7 +3167,7 @@ Public Class MainForm
     <Command("Creates a job and runs the job list.")>
     Sub StartEncoding()
         AssistantPassed = True
-        AddJob(False, Nothing)
+        AddJob(False, "")
         g.ProcessJobs()
     End Sub
 
@@ -3350,6 +3345,9 @@ Public Class MainForm
 
     <Command("Shows the settings dialog.")>
     Sub ShowSettingsDialog()
+        Dim usePortableAviSynth = s.UsePortableAviSynth
+        Dim usePortableVapourSynth = s.UsePortableVapourSynth
+
         Using form As New SimpleSettingsForm("Settings")
             Dim ui = form.SimpleUI
             ui.Store = s
@@ -3361,8 +3359,12 @@ Public Class MainForm
             b.Field = NameOf(s.CheckForUpdates)
 
             b = ui.AddBool
+            b.Text = "Use included portable AviSynth"
+            b.Field = NameOf(s.UsePortableAviSynth)
+
+            b = ui.AddBool
             b.Text = "Use included portable VapourSynth"
-            b.Field = NameOf(s.UseVapourSynthPortable)
+            b.Field = NameOf(s.UsePortableVapourSynth)
 
             b = ui.AddBool()
             b.Text = "Show template selection when loading new files"
@@ -3394,7 +3396,7 @@ Public Class MainForm
 
             n = ui.AddNum()
             n.Text = "Number of most recently used projects to keep"
-            n.Help = "MRU list shown in the main menu under: Project > Recent"
+            n.Help = "MRU list shown in the main menu under: File > Recent Projects"
             n.Config = {0, 15}
             n.Field = NameOf(s.ProjectsMruNum)
 
@@ -3445,8 +3447,8 @@ Public Class MainForm
             b.Help = "If you disable this you can still right-click menu items to show the tooltip."
             b.Field = NameOf(s.EnableTooltips)
 
-            ui.AddControlPage(New PreprocessingControl, "Preprocessing").FormSizeScaleFactor = New Size(38, 21)
-            ui.FormSizeScaleFactor = New Size(31, 21)
+            ui.AddControlPage(New PreprocessingControl, "Preprocessing").FormSizeScaleFactor = New Size(38, 22)
+            ui.FormSizeScaleFactor = New Size(31, 22)
 
             Dim systemPage = ui.CreateFlowPage("System", True)
 
@@ -3545,25 +3547,28 @@ Public Class MainForm
                 g.SaveSettings()
             End If
 
+            If usePortableAviSynth <> s.UsePortableAviSynth OrElse
+                usePortableVapourSynth <> s.UsePortableVapourSynth Then
+
+                MsgInfo("Please restart StaxRip.")
+            End If
+
             ui.SaveLast("last settings page")
         End Using
     End Sub
 
-    Function AddFilterPreferences(ui As SimpleUI,
-                                  pagePath As String,
-                                  preferences As StringPairList,
-                                  profiles As List(Of FilterCategory)) As BindingSource
+    Function AddFilterPreferences(
+        ui As SimpleUI,
+        pagePath As String,
+        preferences As StringPairList,
+        profiles As List(Of FilterCategory)) As BindingSource
 
         Dim filterPage = ui.CreateDataPage(pagePath)
 
         Dim tipsFunc = Function() As StringPairList
-                           Dim ret As New StringPairList From {
-                               {" Filters Menu", "StaxRip allows to assign a source filter profile to a particular source file type. The source filter profiles can be customized by right-clicking the filters menu in the main dialog."}
-                           }
+                           Dim ret As New StringPairList From {{" Filters Menu", "StaxRip allows to assign a source filter profile to a particular source file type. The source filter profiles can be customized by right-clicking the filters menu in the main dialog."}}
 
-                           For Each i In profiles.Where(
-                               Function(v) v.Name = "Source").First.Filters
-
+                           For Each i In profiles.Where(Function(v) v.Name = "Source").First.Filters
                                If i.Script <> "" Then
                                    ret.Add(i.Name, i.Script)
                                End If
@@ -3834,9 +3839,7 @@ Public Class MainForm
 
     <Command("Dialog to manage batch jobs.")>
     Sub ShowJobsDialog()
-        Using form As New JobsForm()
-            form.ShowDialog()
-        End Using
+        JobsForm.ShowForm()
     End Sub
 
     <Command("Clears the job list.")>
@@ -3874,18 +3877,113 @@ Public Class MainForm
         End If
     End Sub
 
+    Sub AddJob(
+        Optional showJobsDialog As Boolean = True,
+        Optional position As Integer = -1)
+
+        If Not CanIgnoreTip Then
+            MsgWarn("The current assistant warning cannot be skipped.")
+            Exit Sub
+        End If
+
+        If Not p.SkippedAssistantTips.Contains(CurrentAssistantTipKey) Then
+            p.SkippedAssistantTips.Add(CurrentAssistantTipKey)
+        End If
+
+        If Not g.VerifyRequirements() Then
+            Exit Sub
+        End If
+
+        If AssistantPassed Then
+            If AbortDueToLowDiskSpace() Then
+                Exit Sub
+            End If
+
+            If Not TypeOf p.VideoEncoder Is NullEncoder AndAlso File.Exists(p.VideoEncoder.OutputPath) Then
+                Select Case p.FileExistVideo
+                    Case FileExistMode.Ask
+                        Using td As New TaskDialog(Of String)
+                            td.MainInstruction = "A video encoding output file already exists"
+                            td.Content = "Would you like to skip video encoding and reuse the existing video encoder output file or would you like to re-encode and overwrite it?"
+                            td.AddCommand("Reuse", "skip")
+                            td.AddCommand("Re-encode", "encode")
+
+                            Select Case td.Show
+                                Case "skip"
+                                    p.SkipVideoEncoding = True
+                                Case "encode"
+                                    p.SkipVideoEncoding = False
+                                Case Else
+                                    Exit Sub
+                            End Select
+                        End Using
+                    Case FileExistMode.Overwrite
+                        p.SkipVideoEncoding = False
+                    Case FileExistMode.Skip
+                        p.SkipVideoEncoding = True
+                End Select
+            End If
+
+            If (p.Audio0.File <> "" AndAlso (TypeOf p.Audio0 Is GUIAudioProfile OrElse
+                TypeOf p.Audio0 Is BatchAudioProfile) AndAlso File.Exists(p.Audio0.GetOutputFile)) OrElse
+                (p.Audio1.File <> "" AndAlso (TypeOf p.Audio1 Is GUIAudioProfile OrElse
+                TypeOf p.Audio1 Is BatchAudioProfile) AndAlso File.Exists(p.Audio1.GetOutputFile)) Then
+
+                Select Case p.FileExistAudio
+                    Case FileExistMode.Ask
+                        Using td As New TaskDialog(Of String)
+                            td.MainInstruction = "An audio encoding output file already exists"
+                            td.Content = "Would you like to skip audio encoding and reuse existing audio encoding output files or would you like to re-encode and overwrite?"
+                            td.AddCommand("Reuse", "skip")
+                            td.AddCommand("Re-encode", "encode")
+
+                            Select Case td.Show
+                                Case "skip"
+                                    p.SkipAudioEncoding = True
+                                Case "encode"
+                                    p.SkipAudioEncoding = False
+                                Case Else
+                                    Exit Sub
+                            End Select
+                        End Using
+                    Case FileExistMode.Overwrite
+                        p.SkipAudioEncoding = False
+                    Case FileExistMode.Skip
+                        p.SkipAudioEncoding = True
+                End Select
+            End If
+
+            AddJob(False, Nothing, position)
+
+            If showJobsDialog Then
+                Me.ShowJobsDialog()
+            Else
+                bnNext.ShowBold()
+            End If
+        Else
+            Assistant()
+        End If
+    End Sub
+
     <Command("Adds a job to the job list.")>
     Sub AddJob(
         <DispName("Show Confirmation")>
         showConfirmation As Boolean,
         <DispName("Template Name"),
         Description("Name of the template to be loaded after the job was added. Empty to load no template.")>
-        templateName As String)
+        templateName As String,
+        <DispName("Position to insert new job")>
+        Optional position As Integer = -1)
 
-        AddJob(showConfirmation, templateName, True)
+        AddJob(showConfirmation, templateName, True, position)
     End Sub
 
-    Sub AddJob(showConfirmation As Boolean, templateName As String, showAssistant As Boolean)
+    Sub AddJob(
+        showConfirmation As Boolean,
+        templateName As String,
+        showAssistant As Boolean,
+        Optional position As Integer = -1)
+
         If Not g.VerifyRequirements() Then
             Exit Sub
         End If
@@ -3897,7 +3995,7 @@ Public Class MainForm
 
         Dim jobPath = JobManager.GetJobPath()
         SaveProjectPath(jobPath)
-        JobManager.AddJob(jobPath, jobPath)
+        JobManager.AddJob(jobPath, jobPath, position)
 
         If showConfirmation Then
             MsgInfo("Job added")
@@ -3928,7 +4026,7 @@ Public Class MainForm
         Using form As New SimpleSettingsForm(
             "Project Options",
             "In order to save project options go to:",
-            "Project > Save As Template",
+            "File > Save Project As Template",
             "In order to select a template to be loaded on program startup go to:",
             "Tools > Settings > General > Templates > Default Template")
 
@@ -4494,7 +4592,7 @@ Public Class MainForm
         ret.Add("Options", NameOf(ShowOptionsDialog), Keys.F8)
 
         ret.Add("Tools|Jobs...", NameOf(ShowJobsDialog), Keys.F6, Symbol.MultiSelectLegacy)
-        ret.Add("Tools|Log File", NameOf(g.DefaultCommands.ShowLogFile), Symbol.Page)
+        ret.Add("Tools|Log File", NameOf(g.DefaultCommands.ShowLogFile), Keys.F7, Symbol.Page)
         ret.Add("Tools|Folders", Symbol.Folder)
         ret.Add("Tools|Folders|Log Files", NameOf(g.DefaultCommands.ExecuteCommandLine), {"""%settings_dir%Log Files"""})
         ret.Add("Tools|Folders|Plugins", NameOf(g.DefaultCommands.ExecuteCommandLine), {"""%plugin_dir%"""})
@@ -4526,6 +4624,8 @@ Public Class MainForm
 
         If g.IsWindowsTerminalAvailable Then
             ret.Add("Tools|Advanced|Windows Terminal", NameOf(g.DefaultCommands.ExecuteCommandLine), Keys.Control Or Keys.T, Symbol.fa_terminal, {"wt.exe", False, False, False, Folder.Desktop})
+        Else
+            ret.Add("Tools|Advanced|PowerShell Terminal", NameOf(g.DefaultCommands.ExecuteCommandLine), Keys.Control Or Keys.T, Symbol.fa_terminal, {"powershell.exe -nologo -executionpolicy unrestricted", False, False, False, Folder.Desktop})
         End If
 
         ret.Add("Tools|Edit Menu...", NameOf(ShowMainMenuEditor))
@@ -5015,6 +5115,151 @@ Public Class MainForm
         blFilesize.Enabled = p.VideoEncoder.GetFixedBitrate = 0
     End Sub
 
+    <Command("Dialog to open a single file source.")>
+    Sub ShowOpenSourceSingleFileDialog()
+        Using dialog As New OpenFileDialog
+            dialog.SetFilter(FileTypes.Video.Concat(FileTypes.Image))
+            dialog.SetInitDir(s.LastSourceDir)
+
+            If dialog.ShowDialog() = DialogResult.OK Then
+                OpenVideoSourceFiles(dialog.FileNames)
+            End If
+        End Using
+    End Sub
+
+    <Command("Dialog to open a Blu-ray folder source.")>
+    Sub ShowOpenSourceBlurayFolderDialog()
+        If p.SourceFile <> "" Then
+            If Not OpenProject() Then
+                Exit Sub
+            End If
+        End If
+
+        Using dialog As New FolderBrowserDialog
+            dialog.Description = "Please select a Blu-ray source folder."
+            dialog.SetSelectedPath(s.Storage.GetString("last blu-ray source folder"))
+            dialog.ShowNewFolderButton = False
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                s.Storage.SetString("last blu-ray source folder", dialog.SelectedPath.FixDir)
+                Dim srcPath = dialog.SelectedPath.FixDir
+
+                If Directory.Exists(srcPath + "BDMV") Then
+                    srcPath = srcPath + "BDMV\"
+                End If
+
+                If Directory.Exists(srcPath + "PLAYLIST") Then
+                    srcPath = srcPath + "PLAYLIST\"
+                End If
+
+                If Not srcPath.ToUpper.EndsWith("PLAYLIST\") Then
+                    MsgWarn("No playlist directory found.")
+                    Exit Sub
+                End If
+
+                Log.WriteEnvironment()
+                Log.Write("Process Blu-Ray folder using eac3to", """" + Package.eac3to.Path + """ """ + srcPath + """" + BR2)
+                Log.WriteLine("Source Drive Type: " + New DriveInfo(dialog.SelectedPath).DriveType.ToString + BR)
+
+                Dim output = ProcessHelp.GetConsoleOutput(Package.eac3to.Path, srcPath.Escape).Replace(VB6.vbBack, "")
+                Log.WriteLine(output)
+
+                Dim a = Regex.Split(output, "^\d+\)", RegexOptions.Multiline).ToList
+
+                If a(0) = "" Then
+                    a.RemoveAt(0)
+                End If
+
+                Dim td2 As New TaskDialog(Of Integer)
+                td2.MainInstruction = "Please select a playlist."
+
+                For Each i In a
+                    If i.Contains(BR) Then
+                        td2.AddCommand(i.Left(BR).Trim, i.Right(BR).TrimEnd, a.IndexOf(i) + 1)
+                    End If
+                Next
+
+                If td2.Show() = 0 Then
+                    Exit Sub
+                End If
+
+                OpenEac3toDemuxForm(srcPath, td2.SelectedValue)
+            End If
+        End Using
+    End Sub
+
+    <Command("Dialog to open a merged files source.")>
+    Sub ShowOpenSourceMergeFilesDialog()
+        Using form As New SourceFilesForm()
+            form.Text = "Merge"
+            form.IsMerge = True
+
+            If form.ShowDialog() = DialogResult.OK AndAlso form.lb.Items.Count > 0 Then
+                Dim files = form.GetFiles
+
+                Select Case files(0).Ext
+                    Case "mpg", "vob"
+                        OpenVideoSourceFiles(files)
+                    Case Else
+                        Using proc As New Proc
+                            proc.Header = "Merge source files"
+
+                            For Each i In files
+                                Log.WriteLine(MediaInfo.GetSummary(i) + "---------------------------------------------------------" + BR2)
+                            Next
+
+                            proc.Encoding = Encoding.UTF8
+                            proc.Package = Package.mkvmerge
+                            Dim outFile = files(0).DirAndBase + "_merged.mkv"
+                            proc.Arguments = "-o " + outFile.Escape + " """ + files.Join(""" + """) + """"
+
+                            Try
+                                proc.Start()
+                            Catch ex As Exception
+                                g.ShowException(ex)
+                                MsgInfo("Manual Merging", "Please merge the files manually with a appropriate tool or visit the support forum].")
+                                Throw New AbortException
+                            End Try
+
+                            If Not g.FileExists(outFile) Then
+                                Log.Write("Error merged output file is missing", outFile)
+                                Exit Sub
+                            Else
+                                OpenVideoSourceFile(outFile)
+                            End If
+                        End Using
+                End Select
+            End If
+        End Using
+    End Sub
+
+    <Command("Dialog to open a file batch source.")>
+    Sub ShowOpenSourceBatchFilesDialog()
+        If AbortDueToLowDiskSpace() Then
+            Exit Sub
+        End If
+
+        Using form As New SourceFilesForm()
+            form.Text = "File Batch"
+
+            If p.DefaultTargetName = "%source_dir_name%" Then
+                p.DefaultTargetName = "%source_name%"
+            End If
+
+            If form.ShowDialog() = DialogResult.OK AndAlso form.lb.Items.Count > 0 Then
+                If p.SourceFiles.Count > 0 AndAlso Not LoadTemplateWithSelectionDialog() Then
+                    Exit Sub
+                End If
+
+                For Each filepath In form.GetFiles
+                    AddBatchJob(filepath)
+                Next
+
+                ShowJobsDialog()
+            End If
+        End Using
+    End Sub
+
     <Command("Dialog to open source files.")>
     Sub ShowOpenSourceDialog()
         Dim td As New TaskDialog(Of String)
@@ -5027,148 +5272,13 @@ Public Class MainForm
 
         Select Case td.Show
             Case "Single File"
-                Using d As New OpenFileDialog
-                    d.SetFilter(FileTypes.Video)
-                    d.SetInitDir(s.LastSourceDir)
-
-                    If d.ShowDialog() = DialogResult.OK Then
-                        OpenVideoSourceFiles(d.FileNames)
-                    End If
-                End Using
+                ShowOpenSourceSingleFileDialog()
             Case "Merge Files"
-                Using form As New SourceFilesForm()
-                    form.Text = "Merge"
-                    form.IsMerge = True
-
-                    If form.ShowDialog() = DialogResult.OK AndAlso form.lb.Items.Count > 0 Then
-                        Dim files = form.GetFiles
-
-                        Select Case files(0).Ext
-                            Case "mpg", "vob"
-                                OpenVideoSourceFiles(files)
-                            Case Else
-                                Using proc As New Proc
-                                    proc.Header = "Merge source files"
-
-                                    For Each i In files
-                                        Log.WriteLine(MediaInfo.GetSummary(i) + "---------------------------------------------------------" + BR2)
-                                    Next
-
-                                    proc.Encoding = Encoding.UTF8
-                                    proc.Package = Package.mkvmerge
-                                    Dim outFile = files(0).DirAndBase + "_merged.mkv"
-                                    proc.Arguments = "-o " + outFile.Escape + " """ + files.Join(""" + """) + """"
-
-                                    Try
-                                        proc.Start()
-                                    Catch ex As Exception
-                                        g.ShowException(ex)
-                                        MsgInfo("Manual Merging", "Please merge the files manually with a appropriate tool or visit the support forum].")
-                                        Throw New AbortException
-                                    End Try
-
-                                    If Not g.FileExists(outFile) Then
-                                        Log.Write("Error merged output file is missing", outFile)
-                                        Exit Sub
-                                    Else
-                                        OpenVideoSourceFile(outFile)
-                                    End If
-                                End Using
-                        End Select
-                    End If
-                End Using
+                ShowOpenSourceMergeFilesDialog()
             Case "File Batch"
-                If AbortDueToLowDiskSpace() Then
-                    Exit Sub
-                End If
-
-                Using form As New SourceFilesForm()
-                    form.Text = "File Batch"
-                    If p.DefaultTargetName = "%source_dir_name%" Then
-                        p.DefaultTargetName = "%source_name%"
-                    End If
-
-                    If form.ShowDialog() = DialogResult.OK AndAlso form.lb.Items.Count > 0 Then
-                        If p.SourceFiles.Count > 0 AndAlso Not LoadTemplateWithSelectionDialog() Then
-                            Exit Sub
-                        End If
-
-                        Dim batchFolder = Folder.Settings + "Batch Projects\"
-
-                        If Not Directory.Exists(batchFolder) Then
-                            Directory.CreateDirectory(batchFolder)
-                        End If
-
-                        For Each i In form.GetFiles
-                            Dim batchProject = ObjectHelp.GetCopy(Of Project)(p)
-                            batchProject.BatchMode = True
-                            batchProject.SourceFiles = {i}.ToList
-                            Dim jobPath = batchFolder + i.Dir.Replace("\", "-").Replace(":", "-") + " " + p.TemplateName + " - " + i.FileName
-                            SafeSerialization.Serialize(batchProject, jobPath)
-                            JobManager.AddJob(i.Base, jobPath)
-                        Next
-
-                        ShowJobsDialog()
-                    End If
-                End Using
+                ShowOpenSourceBatchFilesDialog()
             Case "Blu-ray Folder"
-                If p.SourceFile <> "" Then
-                    If Not OpenProject() Then
-                        Exit Sub
-                    End If
-                End If
-
-                Using dialog As New FolderBrowserDialog
-                    dialog.Description = "Please select a Blu-ray source folder."
-                    dialog.SetSelectedPath(s.Storage.GetString("last blu-ray source folder"))
-                    dialog.ShowNewFolderButton = False
-
-                    If dialog.ShowDialog = DialogResult.OK Then
-                        s.Storage.SetString("last blu-ray source folder", dialog.SelectedPath.FixDir)
-                        Dim srcPath = dialog.SelectedPath.FixDir
-
-                        If Directory.Exists(srcPath + "BDMV") Then
-                            srcPath = srcPath + "BDMV\"
-                        End If
-
-                        If Directory.Exists(srcPath + "PLAYLIST") Then
-                            srcPath = srcPath + "PLAYLIST\"
-                        End If
-
-                        If Not srcPath.ToUpper.EndsWith("PLAYLIST\") Then
-                            MsgWarn("No playlist directory found.")
-                            Exit Sub
-                        End If
-
-                        Log.WriteEnvironment()
-                        Log.Write("Process Blu-Ray folder using eac3to", """" + Package.eac3to.Path + """ """ + srcPath + """" + BR2)
-                        Log.WriteLine("Source Drive Type: " + New DriveInfo(dialog.SelectedPath).DriveType.ToString + BR)
-
-                        Dim output = ProcessHelp.GetConsoleOutput(Package.eac3to.Path, srcPath.Escape).Replace(VB6.vbBack, "")
-                        Log.WriteLine(output)
-
-                        Dim a = Regex.Split(output, "^\d+\)", RegexOptions.Multiline).ToList
-
-                        If a(0) = "" Then
-                            a.RemoveAt(0)
-                        End If
-
-                        Dim td2 As New TaskDialog(Of Integer)
-                        td2.MainInstruction = "Please select a playlist."
-
-                        For Each i In a
-                            If i.Contains(BR) Then
-                                td2.AddCommand(i.Left(BR).Trim, i.Right(BR).TrimEnd, a.IndexOf(i) + 1)
-                            End If
-                        Next
-
-                        If td2.Show() = 0 Then
-                            Exit Sub
-                        End If
-
-                        OpenEac3toDemuxForm(srcPath, td2.SelectedValue)
-                    End If
-                End Using
+                ShowOpenSourceBlurayFolderDialog()
         End Select
     End Sub
 
@@ -5286,15 +5396,15 @@ Public Class MainForm
     End Sub
 
     Sub tbSource_DoubleClick() Handles tbSourceFile.DoubleClick
-        Using d As New OpenFileDialog
-            d.SetFilter(FileTypes.Video)
-            d.Multiselect = True
-            d.SetInitDir(s.LastSourceDir)
+        Using dialog As New OpenFileDialog
+            dialog.SetFilter(FileTypes.Video)
+            dialog.Multiselect = True
+            dialog.SetInitDir(s.LastSourceDir)
 
-            If d.ShowDialog() = DialogResult.OK Then
+            If dialog.ShowDialog() = DialogResult.OK Then
                 Refresh()
 
-                Dim l As New List(Of String)(d.FileNames)
+                Dim l As New List(Of String)(dialog.FileNames)
                 l.Sort()
                 OpenVideoSourceFiles(l)
             End If
@@ -5860,6 +5970,8 @@ Public Class MainForm
 
     Protected Overrides Sub OnActivated(e As EventArgs)
         MyBase.OnActivated(e)
+        UpdateNextButton()
+
         BeginInvoke(New Action(Sub()
                                    Application.DoEvents()
                                    Assistant()
@@ -5899,6 +6011,21 @@ Public Class MainForm
         g.RaiseAppEvent(ApplicationEvent.ApplicationExit)
     End Sub
 
+    Protected Overrides Sub OnDeactivate(e As EventArgs)
+        MyBase.OnDeactivate(e)
+        UpdateNextButton()
+    End Sub
+
+    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
+        MyBase.OnKeyDown(e)
+        UpdateNextButton()
+    End Sub
+
+    Protected Overrides Sub OnKeyUp(e As KeyEventArgs)
+        MyBase.OnKeyUp(e)
+        UpdateNextButton()
+    End Sub
+
     Protected Overrides ReadOnly Property ShowWithoutActivation As Boolean
         Get
             Dim hwnd = Native.GetForegroundWindow()
@@ -5913,4 +6040,37 @@ Public Class MainForm
             Return MyBase.ShowWithoutActivation
         End Get
     End Property
+
+    Sub UpdateNextButton()
+        If AssistantPassed AndAlso CanIgnoreTip AndAlso
+            (ModifierKeys.HasFlag(Keys.Shift) OrElse ModifierKeys.HasFlag(Keys.Control)) Then
+
+            Dim txt = "Add"
+
+            If ModifierKeys.HasFlag(Keys.Shift) Then
+                txt += " to top"
+            End If
+
+            If ModifierKeys.HasFlag(Keys.Control) Then
+                txt += BR + "w/o opening"
+            End If
+
+            bnNext.Text = txt
+        Else
+            bnNext.Text = "Next"
+        End If
+    End Sub
+
+    Sub bnNext_Click(sender As Object, e As EventArgs) Handles bnNext.Click
+        Dim showJobsDialog = Not Control.ModifierKeys.HasFlag(Keys.Control)
+        Dim position = If(Control.ModifierKeys.HasFlag(Keys.Shift), 0, -1)
+
+        AddJob(showJobsDialog, position)
+    End Sub
+
+    Sub bnNext_MouseDown(sender As Object, e As MouseEventArgs) Handles bnNext.MouseDown
+        If e.Button = MouseButtons.Right AndAlso AssistantPassed AndAlso CanIgnoreTip Then
+            NextContextMenuStrip.Show(bnNext, 0, bnNext.Height)
+        End If
+    End Sub
 End Class

@@ -3,7 +3,9 @@ Imports System.Collections.ObjectModel
 Imports System.Drawing.Imaging
 Imports System.Globalization
 Imports System.Management.Automation
+Imports System.Reflection
 Imports System.Runtime.ExceptionServices
+Imports System.Security.Principal
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Threading
@@ -15,16 +17,17 @@ Imports StaxRip.UI
 Imports VB6 = Microsoft.VisualBasic
 
 Public Class GlobalClass
-    Property ProjectPath As String
-    Property MainForm As MainForm
-    Property ProcForm As ProcessingForm
-    Property MinimizedWindows As Boolean
-    Property SavedProject As New Project
     Property DefaultCommands As New GlobalCommands
-    Property IsJobProcessing As Boolean
-    Property StopAfterCurrentJob As Boolean
     Property DPI As Integer
+    Property IsAdmin As Boolean = New WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)
+    Property IsJobProcessing As Boolean
+    Property MainForm As MainForm
     Property MenuSpace As String
+    Property MinimizedWindows As Boolean
+    Property ProcForm As ProcessingForm
+    Property ProjectPath As String
+    Property SavedProject As New Project
+    Property StopAfterCurrentJob As Boolean
 
     Event JobMuxed()
     Event JobProcessed()
@@ -242,8 +245,15 @@ Public Class GlobalClass
 
             g.RaiseAppEvent(ApplicationEvent.BeforeProcessing)
 
-            Log.WriteHeader(If(p.Script.Engine = ScriptEngine.AviSynth, "AviSynth Script", "VapourSynth Script"))
+            Log.WriteHeader($"{p.Script.Engine} Script")
             Log.WriteLine(p.Script.GetFullScript)
+
+            Dim err = p.Script.GetError
+
+            If err <> "" Then
+                Throw New ErrorAbortException($"{p.Script.Engine} Script Error", err)
+            End If
+
             Log.WriteHeader("Source Script Info")
             Log.WriteLine(p.SourceScript.GetInfo().GetInfoText(-1))
             Log.WriteHeader("Target Script Info")
@@ -1383,7 +1393,7 @@ Public Class GlobalClass
 
                 Select Case td.Show()
                     Case "avs2pipemod info"
-                        g.RunCodeInTerminal($"""`n{Package.avs2pipemod.Name} {Package.avs2pipemod.Version}""; & '{Package.avs2pipemod.Path}' -info '{script.Path}'")
+                        g.RunCodeInTerminal($"""`n{Package.avs2pipemod.Name} {Package.avs2pipemod.Version}""; & '{Package.avs2pipemod.Path}' -dll=""{Package.AviSynth.Path.Escape}"" -info '{script.Path}'")
                     Case "avsmeter benchmark"
                         g.RunCodeInTerminal($"& '{Package.AVSMeter.Path}' '{script.Path}'")
                     Case "avsmeter info"
@@ -1411,40 +1421,4 @@ Public Class GlobalClass
     Function IsDevelopmentPC() As Boolean
         Return Application.StartupPath.EndsWith("\bin")
     End Function
-
-    Shared WasFrameServerInitialized As Boolean
-
-    Sub InitFrameServer()
-        If Not WasFrameServerInitialized Then
-            g.AddToPath(Folder.Startup, Package.Python.Directory, Package.AviSynth.Directory,
-                        Package.VapourSynth.Directory, Package.FFTW.Directory)
-
-            MakeSymLinks()
-            WasFrameServerInitialized = True
-        End If
-    End Sub
-
-    Sub MakeSymLinks()
-        Dim pack = Package.ffmpeg
-        Dim path = pack.Directory + "AviSynth.dll"
-
-        If Package.AviSynth.Path.StartsWith(Folder.Startup) Then
-            If s.Storage.GetString(pack.Name + "symlink") <> path OrElse Not path.FileExists Then
-                FileHelp.Delete(path)
-                Dim cmd = $"mklink {path.Escape} {Package.AviSynth.Path.Escape}"
-
-                Using proc As New Process
-                    proc.StartInfo.FileName = "cmd.exe"
-                    proc.StartInfo.Arguments = $"/S /C ""{cmd}"""
-                    proc.StartInfo.UseShellExecute = False
-                    proc.StartInfo.CreateNoWindow = True
-                    proc.Start()
-                End Using
-
-                s.Storage.SetString(pack.Name + "symlink", path)
-            End If
-        Else
-            FileHelp.Delete(path)
-        End If
-    End Sub
 End Class

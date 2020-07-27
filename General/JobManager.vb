@@ -64,30 +64,30 @@ Public Class JobManager
         End While
     End Sub
 
-    Shared Sub RemoveJob(jobPath As String)
+    Shared Sub RemoveJob(path As String)
         Dim jobs = GetJobs()
 
-        For Each i In jobs.ToArray
-            If i.Path = jobPath Then
-                jobs.Remove(i)
+        For Each job In jobs.ToArray
+            If job.Path = path Then
+                jobs.Remove(job)
                 SaveJobs(jobs)
             End If
         Next
     End Sub
 
-    Shared Sub ActivateJob(jobPath As String, Optional isActive As Boolean = True)
+    Shared Sub ActivateJob(path As String, Optional isActive As Boolean = True)
         Dim jobs = GetJobs()
 
-        For Each i In jobs
-            If i.Path = jobPath Then
-                i.Active = isActive
+        For Each job In jobs
+            If job.Path = path Then
+                job.Active = isActive
             End If
         Next
 
         SaveJobs(jobs)
     End Sub
 
-    Shared Sub AddJob(name As String, path As String)
+    Shared Sub AddJob(name As String, path As String, Optional position As Integer = -1)
         Dim jobs = GetJobs()
 
         For Each job In jobs.ToArray
@@ -96,7 +96,22 @@ Public Class JobManager
             End If
         Next
 
-        jobs.Add(New Job(name, path))
+        If position = -1 Then
+            jobs.Add(New Job(name, path))
+        ElseIf position >= 0 Then
+            If jobs.Count > position Then
+                jobs.Insert(position, New Job(name, path))
+            Else
+                jobs.Add(New Job(name, path))
+            End If
+        Else
+            If -jobs.Count - 1 <= position Then
+                jobs.Insert(jobs.Count + position + 1, New Job(name, path))
+            Else
+                jobs.Add(New Job(name, path))
+            End If
+        End If
+
         SaveJobs(jobs)
     End Sub
 
