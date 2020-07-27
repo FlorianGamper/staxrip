@@ -1567,6 +1567,16 @@ Public Class MainForm
         batchProject.BatchMode = True
         batchProject.SourceFiles = {sourcefile}.ToList
         Dim jobPath = batchFolder + sourcefile.Dir.Replace("\", "-").Replace(":", "-") + " " + p.TemplateName + " - " + sourcefile.FileName
+
+        REM Shortening BatchName if Flag is set
+        If (s.IsFileNameLengthRestricted And jobPath.Length > s.MaxBatchFileNameLength) Then
+            Dim hash = jobPath.GetHashCode().ToString()
+            Dim shortenedFileName As String = Microsoft.VisualBasic.Strings.Right(sourcefile.FileName, s.MaxBatchFileNameLength - (hash.Length + 1))
+            shortenedFileName = hash + "-" + shortenedFileName
+            jobPath = batchFolder + shortenedFileName
+        End If
+        REM -----------------------------------------
+
         SafeSerialization.Serialize(batchProject, jobPath)
         JobManager.AddJob(sourcefile.Base, jobPath)
     End Sub
@@ -5271,12 +5281,6 @@ Public Class MainForm
 
                 For Each filepath In form.GetFiles
                     AddBatchJob(filepath)
-                            If (s.IsFileNameLengthRestricted And jobPath.Length > s.MaxBatchFileNameLength) Then
-                                Dim hash = jobPath.GetHashCode().ToString()
-                                Dim shortenedFileName As String = Microsoft.VisualBasic.Strings.Right(i.FileName, s.MaxBatchFileNameLength - (hash.Length + 1))
-                                shortenedFileName = hash + "-" + shortenedFileName
-                                jobPath = batchFolder + shortenedFileName
-                            End If
                 Next
 
                 ShowJobsDialog()
