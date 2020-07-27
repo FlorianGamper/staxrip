@@ -1,5 +1,7 @@
-﻿Imports StaxRip.UI
+﻿
 Imports System.Threading
+
+Imports StaxRip.UI
 
 Public Class MacrosForm
     Inherits DialogBase
@@ -245,9 +247,9 @@ Public Class MacrosForm
         ActiveControl = stb
     End Sub
 
-    Public Shared Sub ShowDialogForm()
-        Using f As New MacrosForm
-            f.ShowDialog()
+    Shared Sub ShowDialogForm()
+        Using form As New MacrosForm
+            form.ShowDialog()
         End Using
     End Sub
 
@@ -265,8 +267,8 @@ Public Class MacrosForm
 
         Dim macros As New StringPairList
 
-        For Each i In Macro.GetMacros(True, True)
-            macros.Add(i.Name, i.Description)
+        For Each mac In Macro.GetMacros(True, True, True)
+            macros.Add(mac.Name, mac.Description)
         Next
 
         For Each i In macros
@@ -281,14 +283,8 @@ Public Class MacrosForm
         If lv.Items.Count > 0 Then
             lv.Items(0).Selected = True
             lv.Items(0).EnsureVisible()
-
-            If 31 * lv.Items.Count > lv.Height Then
-                lv.TileSize = New Size(lv.Width - SystemInformation.VerticalScrollBarWidth - 5, CInt(Font.Height * 1.5))
-                lv.Scrollable = True
-            Else
-                lv.Scrollable = False
-            End If
-
+            lv.TileSize = New Size(lv.Width - SystemInformation.VerticalScrollBarWidth - 5, CInt(Font.Height * 1.5))
+            lv.Scrollable = True
             Native.SetWindowTheme(lv.Handle, "explorer", Nothing)
         End If
 
@@ -296,18 +292,15 @@ Public Class MacrosForm
         lv.Refresh()
     End Sub
 
-    Private Sub tbFilter_TextChanged() Handles stb.TextChanged
+    Sub tbFilter_TextChanged() Handles stb.TextChanged
         Populate()
     End Sub
 
-    Private Sub MacrosForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
-        Dim f As New HelpForm()
-        f.Doc.WriteStart(Text)
-        f.Doc.WriteTable("Macros", Strings.MacrosHelp, Macro.GetTips())
-        f.Show()
+    Sub MacrosForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+        g.ShellExecute("https://staxrip.readthedocs.io/macros.html")
     End Sub
 
-    Private Sub TaskForm_KeyDown(sender As Object, e As KeyEventArgs) Handles Me.KeyDown
+    Sub TaskForm_KeyDown(sender As Object, e As KeyEventArgs) Handles Me.KeyDown
         Select Case e.KeyData
             Case Keys.Enter
                 bnCopy.PerformClick()
@@ -332,20 +325,27 @@ Public Class MacrosForm
 
             If sel <> 0 Then
                 sel = lv.SelectedItems(0).Index + sel
-                If sel < 0 Then sel = 0
-                If sel >= lv.Items.Count Then sel = lv.Items.Count - 1
+
+                If sel < 0 Then
+                    sel = 0
+                End If
+
+                If sel >= lv.Items.Count Then
+                    sel = lv.Items.Count - 1
+                End If
+
                 lv.Items(sel).Selected = True
                 lv.Items(sel).EnsureVisible()
             End If
         End If
     End Sub
 
-    Private Sub lv_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles lv.MouseDoubleClick
+    Sub lv_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles lv.MouseDoubleClick
         bnCopy.PerformClick()
         Close()
     End Sub
 
-    Private Sub lv_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lv.SelectedIndexChanged
+    Sub lv_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lv.SelectedIndexChanged
         bnCopy.Text = "Copy"
 
         If lv.SelectedItems.Count > 0 Then
@@ -360,7 +360,7 @@ Public Class MacrosForm
         End If
     End Sub
 
-    Private Sub bCopy_Click(sender As Object, e As EventArgs) Handles bnCopy.Click
+    Sub bnCopy_Click(sender As Object, e As EventArgs) Handles bnCopy.Click
         Clipboard.SetText(lName.Text)
         bnCopy.Font = New Font(bnCopy.Font, FontStyle.Bold)
         Application.DoEvents()
@@ -368,7 +368,7 @@ Public Class MacrosForm
         bnCopy.Font = New Font(bnCopy.Font, FontStyle.Regular)
     End Sub
 
-    Private Sub MacrosForm_Load(sender As Object, e As EventArgs) Handles Me.Load
+    Sub MacrosForm_Load(sender As Object, e As EventArgs) Handles Me.Load
         Populate(False)
         lDescriptionTitle.SetFontStyle(FontStyle.Bold)
         lNameTitle.SetFontStyle(FontStyle.Bold)

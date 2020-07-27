@@ -1,6 +1,6 @@
+
 Imports System.Runtime.InteropServices
 Imports System.Text.RegularExpressions
-Imports Microsoft.Win32
 
 Public Class MediaInfo
     Implements IDisposable
@@ -16,10 +16,6 @@ Public Class MediaInfo
 
         Handle = MediaInfo_New()
         MediaInfo_Open(Handle, path)
-
-        If Registry.CurrentUser.GetBoolean("Software\" + Application.ProductName, "DevMode") Then
-            MediaInfo_Option(Handle, "Language", "raw")
-        End If
     End Sub
 
     Private VideoStreamsValue As List(Of VideoStream)
@@ -63,11 +59,19 @@ Public Class MediaInfo
                     at.Index = index
 
                     Dim streamOrder = GetAudio(index, "StreamOrder")
-                    If Not streamOrder.IsInt Then streamOrder = (index + 1).ToString
+
+                    If Not streamOrder.IsInt Then
+                        streamOrder = (index + 1).ToString
+                    End If
+
                     at.StreamOrder = streamOrder.ToInt + offset
 
                     Dim id = GetAudio(index, "ID")
-                    If Not id.IsInt Then id = (index + 2).ToString
+
+                    If Not id.IsInt Then
+                        id = (index + 2).ToString
+                    End If
+
                     at.ID = id.ToInt + offset
 
                     at.Lossy = GetAudio(index, "Compression_Mode") = "Lossy"
@@ -103,11 +107,17 @@ Public Class MediaInfo
                     If at.Bitrate = 0 Then at.Bitrate = GetAudio(index, "FromStats_BitRate").ToInt
 
                     at.Delay = GetAudio(index, "Video_Delay").ToInt
-                    If at.Delay = 0 Then at.Delay = GetAudio(index, "Source_Delay").ToInt
+
+                    If at.Delay = 0 Then
+                        at.Delay = GetAudio(index, "Source_Delay").ToInt
+                    End If
 
                     Dim channels = GetAudio(index, "Channel(s)")
                     at.Channels = channels.ToInt
-                    If at.Channels = 0 Then at.Channels = GetAudio(index, "Channel(s)_Original").ToInt
+
+                    If at.Channels = 0 Then
+                        at.Channels = GetAudio(index, "Channel(s)_Original").ToInt
+                    End If
 
                     If at.Channels = 0 Then
                         If channels.Contains("/") Then
@@ -256,6 +266,16 @@ Public Class MediaInfo
         Return GetInfo(path, MediaInfoStreamKind.General, parameter)
     End Function
 
+    Shared Function GetVideoFormat(path As String) As String
+        Dim ret = GetInfo(path, MediaInfoStreamKind.Video, "Format")
+
+        If ret = "MPEG Video" Then
+            ret = "MPEG"
+        End If
+
+        Return ret
+    End Function
+
     Function GetFrameRate(Optional defaultValue As Double = 25) As Double
         Dim ret = GetVideo("FrameRate_Num").ToInt / GetVideo("FrameRate_Den").ToInt
 
@@ -322,29 +342,6 @@ Public Class MediaInfo
         If ret.Contains("MPEG-1 Audio layer 2") Then ret = ret.Replace("MPEG-1 Audio layer 2", "MP2")
         If ret.Contains("MPEG-1 Audio layer 3") Then ret = ret.Replace("MPEG-1 Audio layer 3", "MP3")
         If ret.Contains("MPEG-2 Audio layer 3") Then ret = ret.Replace("MPEG-2 Audio layer 3", "MP3")
-
-        Return ret
-    End Function
-
-    Shared Function GetVideoCodec(path As String) As String
-        Dim ret = MediaInfo.GetVideo(path, "Codec/String")
-
-        Select Case ret
-            Case "MPEG-4 Visual"
-                ret = "MPEG-4V"
-            Case "MPEG-1 Video"
-                ret = "MPEG-1"
-            Case "V_MPEGH/ISO/HEVC"
-                ret = "HEVC"
-            Case "MPEG-2 Video"
-                ret = "MPEG-2"
-            Case "V_VP8"
-                ret = "VP8"
-            Case "V_VP9"
-                ret = "VP9"
-            Case "0x00000000"
-                ret = MediaInfo.GetVideo(path, "Format")
-        End Select
 
         Return ret
     End Function

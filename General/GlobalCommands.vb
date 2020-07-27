@@ -1,24 +1,29 @@
 ﻿
 Imports System.ComponentModel
 Imports System.Drawing.Design
+Imports System.Management.Automation
 Imports System.Reflection
+Imports System.Runtime.InteropServices
 Imports System.Text
-
+Imports DirectN
 Imports Microsoft.Win32
 Imports StaxRip.UI
 
 Public Class GlobalCommands
-    <Command("Shows the log file with the built in log file viewer.")>
-    Sub ShowLogFile()
-        If Not File.Exists(p.Log.GetPath()) Then
-            Exit Sub
-        End If
+    <Command("Checks if a update is available.")>
+    Sub CheckForUpdate()
+        Update.CheckForUpdate(True)
+    End Sub
 
-        Using form As New LogForm
-            form.Path = p.Log.GetPath()
-            form.Init()
-            form.ShowDialog()
-        End Using
+    <Command("Shows the log file with the built-in log file viewer.")>
+    Sub ShowLogFile()
+        If File.Exists(p.Log.GetPath()) Then
+            Using form As New LogForm()
+                form.ShowDialog()
+            End Using
+        Else
+            g.ShellExecute(Folder.Settings + "Log Files")
+        End If
     End Sub
 
     <Command("Allows to use StaxRip's demuxing GUIs independently.")>
@@ -32,33 +37,44 @@ Public Class GlobalCommands
             Dim sourceFile = ui.AddTextButton(page)
             sourceFile.Label.Text = "Source File:"
             sourceFile.Edit.Expand = True
+            sourceFile.Edit.TextBox.ReadOnly = True
             sourceFile.BrowseFile(FileTypes.VideoAudio)
 
             Dim outputFolder = ui.AddTextButton(page)
             outputFolder.Label.Text = "Output Folder:"
             outputFolder.Edit.Expand = True
+            outputFolder.Edit.TextBox.ReadOnly = True
             outputFolder.BrowseFolder()
 
             page.ResumeLayout()
 
-            AddHandler sourceFile.Edit.TextChanged, Sub()
-                                                        If outputFolder.Edit.Text = "" AndAlso
-                                                            File.Exists(sourceFile.Edit.Text) Then
+            Dim textChanged = Sub()
+                                  If outputFolder.Edit.Text = "" AndAlso
+                                      File.Exists(sourceFile.Edit.Text) Then
 
-                                                            outputFolder.Edit.Text = sourceFile.Edit.Text.Dir
-                                                        End If
-                                                    End Sub
+                                      outputFolder.Edit.Text = sourceFile.Edit.Text.Dir
+                                  End If
+                              End Sub
+
+            AddHandler sourceFile.Edit.TextChanged, textChanged
             form.FileDrop = True
             AddHandler form.FilesDropped, Sub(files) sourceFile.Edit.Text = files(0)
 
             If form.ShowDialog() = DialogResult.OK AndAlso
-                    File.Exists(sourceFile.Edit.Text) AndAlso
-                    Directory.Exists(outputFolder.Edit.Text) Then
+                File.Exists(sourceFile.Edit.Text) AndAlso
+                Directory.Exists(outputFolder.Edit.Text) Then
 
                 Using td As New TaskDialog(Of Demuxer)
                     td.MainInstruction = "Select a demuxer."
-                    If sourceFile.Edit.Text.Ext = "mkv" Then td.AddCommand("mkvextract", New mkvDemuxer)
-                    If sourceFile.Edit.Text.Ext.EqualsAny("mp4", "flv") Then td.AddCommand("MP4Box", New MP4BoxDemuxer)
+
+                    If sourceFile.Edit.Text.Ext = "mkv" Then
+                        td.AddCommand("mkvextract", New mkvDemuxer)
+                    End If
+
+                    If sourceFile.Edit.Text.Ext.EqualsAny("mp4", "flv") Then
+                        td.AddCommand("MP4Box", New MP4BoxDemuxer)
+                    End If
+
                     td.AddCommand("ffmpeg", New ffmpegDemuxer)
                     td.AddCommand("eac3to", New eac3toDemuxer)
 
@@ -83,156 +99,42 @@ Public Class GlobalCommands
         g.ProcessJobs()
     End Sub
 
-    <Command("Shows a command prompt with the temp directory of the current project.")>
-    Sub ShowCommandPrompt()
-        Dim path = Environment.GetEnvironmentVariable("path")
-
-        For Each pack In Package.Items.Values
-            If Not pack.Filename.Ext = "exe" OrElse Not pack.Path.FileExists Then
-                Continue For
-            End If
-
-            path = pack.Directory + ";" + path
-        Next
-
-        Using proc As New Process
-            proc.StartInfo.UseShellExecute = False
-            proc.StartInfo.FileName = "cmd.exe"
-            proc.StartInfo.Arguments = "/k"
-            proc.StartInfo.WorkingDirectory = p.TempDir
-            proc.StartInfo.EnvironmentVariables("path") = path
-            proc.Start()
-        End Using
-    End Sub
-
-    <Command("Shows the powershell with aliases for all tools staxrip includes.")>
-    Sub ShowPowerShell()
-        Dim path = Environment.GetEnvironmentVariable("path")
-
-        For Each pack In Package.Items.Values
-            If Not pack.Filename.Ext = "exe" OrElse Not pack.Path.FileExists Then
-                Continue For
-            End If
-
-            path = pack.Directory + ";" + path
-        Next
-
-        Using proc As New Process
-            proc.StartInfo.UseShellExecute = False
-            proc.StartInfo.FileName = "powershell.exe"
-            proc.StartInfo.Arguments = "-noexit -nologo"
-            proc.StartInfo.WorkingDirectory = p.TempDir
-            proc.StartInfo.EnvironmentVariables("path") = path
-            proc.Start()
-        End Using
-    End Sub
-
-    <Command("Executes command lines separated by a line break line by line. Macros are solved and passed as environment variables.")>
+    <Command("Executes a command line. If Shell Execute is disabled then macros are passed in as environment variables.")>
     Sub ExecuteCommandLine(
         <DispName("Command Line"),
-        Description("One or more command lines to be executed or if batch mode is used content of the batch file. Macros are solved as well as passed in as environment variables."),
+        Description("The command line to be executed. Macros are solved."),
         Editor(GetType(CommandLineTypeEditor), GetType(UITypeEditor))>
-        commandLines As String,
+        commandLine As String,
         <DispName("Wait For Exit"),
-        Description("This will halt the main thread until the command line returns."),
+        Description("Halt until the command line returns."),
         DefaultValue(False)>
         waitForExit As Boolean,
         <DispName("Show Process Window"),
-        Description("Redirects the output of console apps to the process window."),
+        Description("Redirects the output of console apps to StaxRips process window. Disables Shell Execute."),
         DefaultValue(False)>
         showProcessWindow As Boolean,
-        <DispName("Batch Mode"),
-        Description("Alternative mode that creats a BAT file to execute."),
-        DefaultValue(False)>
-        asBatch As Boolean)
+        <DispName("Use Shell Execute"),
+        Description("Executes the command line using the shell. Available when the Show Process Window option is disabled."),
+        DefaultValue(True)>
+        useShellExecute As Boolean,
+        <DispName("Working Directory"),
+        Description("Working directory the process will use.")>
+        workingDirectory As String)
 
-        If asBatch Then
-            Dim batchPath = Folder.Temp + Guid.NewGuid.ToString + ".bat"
-            Dim batchCode = Macro.Expand(commandLines)
-            File.WriteAllText(batchPath, batchCode, Encoding.Default)
-            AddHandler g.MainForm.Disposed, Sub() FileHelp.Delete(batchPath)
+        commandLine = Macro.Expand(commandLine)
 
-            Using proc As New Proc(showProcessWindow)
-                proc.Header = "Execute Command Line"
-                proc.WriteLog(batchCode + BR2)
-                proc.File = "cmd.exe"
-                proc.Arguments = "/C call """ + batchPath + """"
-                proc.Wait = waitForExit
+        Using proc As New Proc(showProcessWindow)
+            proc.Header = "Execute Command Line"
+            proc.CommandLine = commandLine
+            proc.Wait = waitForExit
+            proc.WorkingDirectory = workingDirectory
+
+            If Not useShellExecute Then
                 proc.Process.StartInfo.UseShellExecute = False
-
-                For Each i In Macro.GetMacros
-                    proc.Process.StartInfo.EnvironmentVariables(i.Name.Trim("%"c)) = Macro.Expand(i.Name)
-                Next
-
-                Try
-                    proc.Start()
-                Catch ex As Exception
-                    g.ShowException(ex)
-                    Log.WriteLine(ex.Message)
-                End Try
-            End Using
-        Else
-            For Each i In Macro.Expand(commandLines).SplitLinesNoEmpty
-                Using proc As New Proc(showProcessWindow)
-                    proc.Header = "Execute Command Line"
-                    proc.CommandLine = i
-                    proc.Wait = waitForExit
-
-                    If i.Ext = "exe" Then
-                        proc.Process.StartInfo.UseShellExecute = False
-
-                        For Each i2 In Macro.GetMacros
-                            proc.Process.StartInfo.EnvironmentVariables(i2.Name.Trim("%"c)) = Macro.Expand(i2.Name)
-                        Next
-                    End If
-
-                    Try
-                        proc.Start()
-                    Catch ex As Exception
-                        g.ShowException(ex)
-                        Log.WriteLine(ex.Message)
-                    End Try
-                End Using
-            Next
-        End If
-    End Sub
-
-    <Command("Saves a batch script as bat file and executes it. Macros are solved as well as passed in as environment variables.")>
-    Sub ExecuteBatchScript(
-        <DispName("Batch Script Code"),
-        Description("Batch script code to be executed. Macros are solved as well as passed in as environment variables."),
-        Editor(GetType(CommandLineTypeEditor), GetType(UITypeEditor))>
-        batchScript As String,
-        <DispName("Interpret Output"),
-        Description("Interprets each output line as StaxRip command."),
-        DefaultValue(False)>
-        Optional interpretOutput As Boolean = False)
-
-        Dim batchPath = Folder.Temp + Guid.NewGuid.ToString + ".bat"
-        Dim batchCode = Macro.Expand(batchScript)
-        File.WriteAllText(batchPath, batchCode, Encoding.Default)
-        AddHandler g.MainForm.Disposed, Sub() FileHelp.Delete(batchPath)
-
-        Using proc As New Proc
-            proc.Header = "Execute Batch Script"
-            proc.WriteLog(batchCode + BR2)
-            proc.File = "cmd.exe"
-            proc.Arguments = "/C call """ + batchPath + """"
-            proc.Wait = True
-            proc.Process.StartInfo.UseShellExecute = False
-
-            For Each i In Macro.GetMacros
-                proc.Process.StartInfo.EnvironmentVariables(i.Name.Trim("%"c)) = Macro.Expand(i.Name)
-            Next
+            End If
 
             Try
                 proc.Start()
-
-                If interpretOutput Then
-                    For Each i In proc.Log.ToString.SplitLinesNoEmpty
-                        If Not g.MainForm.CommandManager.ProcessCommandLineArgument(i) Then Log.WriteLine("Failed to interpret output:" + BR2 + i)
-                    Next
-                End If
             Catch ex As Exception
                 g.ShowException(ex)
                 Log.WriteLine(ex.Message)
@@ -240,31 +142,28 @@ Public Class GlobalCommands
         End Using
     End Sub
 
-    <Command("Executes a PowerShell script.")>
-    Sub ExecuteScriptFile(<DispName("File Path")>
-                          <Description("Filepath to a PowerShell script, the path may contain macros.")>
-                          <Editor(GetType(OpenFileDialogEditor), GetType(UITypeEditor))>
-                          filepath As String)
+    <Command("Executes a PowerShell PS1 script file.")>
+    Sub ExecuteScriptFile(
+        <DispName("File Path")>
+        <Description("Filepath to a PowerShell PS1 script file. May contain macros.")>
+        <Editor(GetType(OpenFileDialogEditor), GetType(UITypeEditor))>
+        filepath As String)
 
         filepath = Macro.Expand(filepath)
 
-        If File.Exists(filepath) Then
-            If filepath.Ext = "ps1" Then
-                ExecutePowerShellScript(filepath.ReadAllText)
-            Else
-                MsgError("Only PowerShell (*.ps1) is supported.")
-            End If
-        Else
-            MsgError("File is missing:" + BR2 + filepath)
-        End If
+        ExecutePowerShellScript(filepath.ReadAllText)
     End Sub
 
     <Command("Starts a tool by name as shown in the app manage dialog.")>
-    Sub StartTool(<DispName("Tool Name")>
-                  <Description("Tool name as shown in the app manage dialog.")>
-                  name As String)
+    Sub StartTool(
+        <DispName("Tool Name")>
+        <Description("Tool name as shown in the app manage dialog.")>
+        name As String)
+
         Try
-            If Package.Items(name).VerifyOK Then Package.Items(name).LaunchAction?.Invoke
+            If Package.Items(name).VerifyOK Then
+                Package.Items(name).LaunchAction?.Invoke
+            End If
         Catch ex As Exception
             g.ShowException(ex)
         End Try
@@ -277,20 +176,20 @@ Public Class GlobalCommands
         <Editor(GetType(MacroStringTypeEditor), GetType(UITypeEditor))>
         code As String,
         <DispName("Use External Shell")>
-        <Description("Execute in StaxRip to automate StaxRip or in external Shell.")>
+        <Description("Execute in StaxRip to automate StaxRip or use external shell.")>
         Optional externalShell As Boolean = False)
 
         If externalShell Then
-            Dim path = Folder.Temp + "temp.ps1"
-            code.WriteFileUtf8(path)
-            g.StartProcess("powershell.exe", "-nologo -noexit -file " + path.Escape)
+            g.RunCodeInTerminal(code)
         Else
-            Scripting.RunPowershell(code)
+            g.InvokePowerShellCode(code)
         End If
     End Sub
 
-    <Command("Test")>
-    Sub Test()
+    <Command("Development tests and creation of doc files.")>
+    Sub TestAndDynamicFileCreation()
+        Documentation.GenerateDynamicFiles()
+
         Dim msg = ""
 
         msg += NVEnc.Test
@@ -330,10 +229,10 @@ Public Class GlobalCommands
             If pack.IsIncluded Then
                 If pack.Path = "" Then
                     msg += BR2 + "# path missing for " + pack.Name
-                ElseIf Not pack.IgnoreVersion Then
+                ElseIf Not pack.VersionAllowAny Then
                     If pack.Version = "" Then
                         msg += BR2 + "# version missing for " + pack.Name
-                    ElseIf Not pack.IsCorrectVersion Then
+                    ElseIf Not pack.IsVersionValid Then
                         msg += BR2 + "# wrong version for " + pack.Name
                     End If
                 End If
@@ -344,296 +243,36 @@ Public Class GlobalCommands
                         msg += BR2 + $"# Help file of {pack.Name} don't exist!"
                     End If
                 End If
-
-                'does setup file exist?
-                If pack.SetupFilename <> "" AndAlso Not File.Exists(Folder.Apps + pack.SetupFilename) Then
-                    msg += BR2 + $"Setup file of {pack.Name} don't exist!"
-                End If
             End If
         Next
-
-        Dim supportedTools = "Supported Tools" + BR + "===============" + BR2 + "Tools" + BR + "-----" + BR2
-
-        For Each i In Package.Items.Values
-            If Not TypeOf i Is PluginPackage Then
-                supportedTools += i.Name + BR + "~".Multiply(i.Name.Length) + BR2 + i.Description + BR2
-                supportedTools += "Used Version: " + i.Version + BR2 + i.WebURL + BR2 + BR
-            End If
-        Next
-
-        supportedTools += "AviSynth Plugins" + BR + "----------------" + BR
-
-        For Each i In Package.Items.Values.OfType(Of PluginPackage)
-            If Not i.AvsFilterNames.NothingOrEmpty Then
-                supportedTools += i.Name + BR + "~".Multiply(i.Name.Length) + BR2 + i.Description + BR2
-                supportedTools += "Filters: " + i.AvsFilterNames.Join(", ") + BR2
-                supportedTools += "Used Version: " + i.Version + BR2 + i.WebURL + BR2 + BR
-            End If
-        Next
-
-        supportedTools += "VapourSynth Plugins" + BR + "-------------------" + BR
-
-        For Each i In Package.Items.Values.OfType(Of PluginPackage)
-            If Not i.VSFilterNames.NothingOrEmpty Then
-                supportedTools += i.Name + BR + "~".Multiply(i.Name.Length) + BR2 + i.Description + BR2
-                supportedTools += "Filters: " + i.VSFilterNames.Join(", ") + BR2
-                supportedTools += "Used Version: " + i.Version + BR2 + i.WebURL + BR2 + BR
-            End If
-        Next
-
-        supportedTools.WriteFileUtf8(Folder.Startup + "..\docs\tools.rst")
-
-        Dim screenshots = "Screenshots" + BR + "===========" + BR2 + ".. contents::" + BR2
-        Dim screenshotFiles = Directory.GetFiles(Folder.Startup + "..\docs\screenshots").ToList
-        screenshotFiles.Sort(New StringLogicalComparer)
-
-        For Each i In screenshotFiles
-            Dim name = i.Base.Replace("_", " ").Trim
-            screenshots += name + BR + "-".Multiply(name.Length) + BR2 + ".. image:: screenshots/" + i.FileName + BR2
-        Next
-
-        screenshots.WriteFileUtf8(Folder.Startup + "..\docs\screenshots.rst")
-
-        Dim macros = "Macros" + BR + "======" + BR2
-
-        For Each i In Macro.GetTips
-            macros += "``" + i.Name + "``" + BR2 + i.Value + BR2
-        Next
-
-        macros.WriteFileUtf8(Folder.Startup + "..\docs\macros.rst")
-
-        Dim powershell = "PowerShell Scripting
-====================
-
-StaxRip can be automated via PowerShell scripting.
-
-
-Events
-------
-
-In order to run scripts on certain events the following events are available:
-
-"
-
-        For Each i As ApplicationEvent In System.Enum.GetValues(GetType(ApplicationEvent))
-            powershell += "- ``" + i.ToString + "`` " + DispNameAttribute.GetValueForEnum(i) + BR
-        Next
-
-        powershell += BR + "Assign to an event by saving a script file in the scripting folder using the event name as file name." + BR2 + "The scripting folder can be opened with:" + BR2 + "Main Menu > Tools > Scripts > Open script folder" + BR2 + "Use one of the following file names:" + BR2
-
-        For Each i In System.Enum.GetNames(GetType(ApplicationEvent))
-            powershell += "- " + i.ToString + ".ps1" + BR
-        Next
-
-        powershell += BR + "Support
--------
-
-If you have questions feel free to ask here:
-
-https://github.com/stax76/staxrip/issues/200
-
-
-Default Scripts
----------------
-
-"
-        Dim psdir = Folder.Startup + "..\docs\powershell"
-        DirectoryHelp.Delete(psdir)
-        Directory.CreateDirectory(psdir)
-
-        For Each i In Directory.GetFiles(Folder.Startup + "Apps\Scripts")
-            FileHelp.Copy(i, psdir + "\" + i.FileName)
-            Dim filename = i.FileName
-            powershell += filename + BR + "~".Multiply(filename.Length) + BR2
-            powershell += ".. literalinclude:: " + "powershell/" + i.FileName + BR + "   :language: powershell" + BR2
-        Next
-
-        powershell.WriteFileUtf8(Folder.Startup + "..\docs\powershell.rst")
-
-        Dim switches = "Command Line Interface
-======================
-
-Switches are processed in the order they appear in the command line.
-
-The command line interface, the customizable main menu and Event Command features are built with a shared command system.
-
-There is a special mode where only the MediaInfo window is shown using -mediainfo , this is useful for File Explorer integration with an app like Open++.
-
-
-Examples
---------
-
-StaxRip C:\\Movie\\project.srip
-
-StaxRip C:\\Movie\\VTS_01_1.VOB C:\\Movie 2\\VTS_01_2.VOB
-
-StaxRip -LoadTemplate:DVB C:\\Movie\\capture.mpg -StartEncoding -Standby
-
-StaxRip -ShowMessageBox:""main text..."",""text ..."",info
-
-
-Switches
---------
-
-"
-
-        Dim commands As New List(Of Command)(g.MainForm.CommandManager.Commands.Values)
-        commands.Sort()
-
-        Dim commandList As New StringPairList
-
-        For Each command In commands
-            Dim params = command.MethodInfo.GetParameters
-            Dim switch = "-" + command.MethodInfo.Name + ":"
-
-            For Each param In params
-                switch += param.Name + ","
-            Next
-
-            switch = switch.TrimEnd(",:".ToCharArray)
-            switches += switch + BR + "~".Multiply(switch.Length) + BR2
-
-            For Each param In params
-                Dim d = param.GetCustomAttribute(Of DescriptionAttribute)
-
-                If Not d Is Nothing Then
-                    switches += param.Name + ": " + param.GetCustomAttribute(Of DescriptionAttribute).Description + BR2
-                End If
-            Next
-
-            Dim enumList As New List(Of String)
-
-            For Each param In params
-                If param.ParameterType.IsEnum Then
-                    enumList.Add(param.ParameterType.Name + ": " +
-                                 System.Enum.GetNames(param.ParameterType).Join(", "))
-                End If
-            Next
-
-            For Each en In enumList
-                switches += en + BR2
-            Next
-
-            switches += command.Attribute.Description + BR2 + BR
-        Next
-
-        switches.WriteFileUtf8(Folder.Startup + "..\docs\cli.rst")
 
         If msg <> "" Then
             Dim fs = Folder.Temp + "staxrip test.txt"
             File.WriteAllText(fs, BR + msg.Trim + BR)
-            g.StartProcess(fs)
+            g.ShellExecute(fs)
         Else
             MsgInfo("No issues found.")
         End If
     End Sub
 
-    <Command("Release")>
-    Sub Release()
-        Try
-            Dim sourceDir = Application.StartupPath + "\"
-
-            If Not sourceDir.EndsWith("\bin\") Then
-                MsgError("Source directory don't end with \bin\" + BR2 + sourceDir)
-                Exit Sub
-            End If
-
-            Dim version = Assembly.LoadFile(sourceDir + "StaxRip.exe").GetName.Version
-            Dim releaseType = "-stable"
-
-            If version.Revision <> 0 Then
-                releaseType = "-beta"
-            End If
-
-            If Not Directory.Exists(sourceDir) Then
-                Throw New Exception("Source directory not found." + BR2 + sourceDir)
-            End If
-
-            Dim info = FileVersionInfo.GetVersionInfo(sourceDir + "StaxRip.exe")
-            Dim targetDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                "StaxRip-x64-" + info.FileVersion + releaseType)
-
-            DirectoryHelp.Delete(targetDir)
-            DirectoryHelp.Copy(sourceDir, targetDir, Microsoft.VisualBasic.FileIO.UIOption.AllDialogs)
-
-            For Each i In Directory.GetDirectories(targetDir + "\Apps\Plugins\VS")
-                Dim cacheDir = i + "\__pycache__"
-
-                If Directory.Exists(cacheDir) Then
-                    DirectoryHelp.Delete(cacheDir)
-                End If
-            Next
-
-            DirectoryHelp.Delete(targetDir + "\.vs")
-            DirectoryHelp.Delete(targetDir + "\Apps\Plugins\VS\Scripts\__pycache__")
-            DirectoryHelp.Delete(targetDir + "\Apps\Audio\qaac\QTfiles64")
-
-            FileHelp.Delete(targetDir + "\_StaxRip.log")
-            FileHelp.Delete(targetDir + "\Apps\Audio\eac3to\log.txt")
-            FileHelp.Delete(targetDir + "\Apps\Support\AVSMeter\AVSMeter.ini")
-            FileHelp.Delete(targetDir + "\Apps\Support\chapterEditor\chapterEditor.ini")
-            FileHelp.Delete(targetDir + "\Apps\Support\DGIndex\DGIndex.ini")
-            FileHelp.Delete(targetDir + "\Apps\Support\MKVToolNix\mkvtoolnix.ini")
-            FileHelp.Delete(targetDir + "\Apps\Support\MKVToolNix\mkvtoolnix-gui.ini")
-            FileHelp.Delete(targetDir + "\Debug.log")
-            FileHelp.Delete(targetDir + "\FrameServer.exp")
-            FileHelp.Delete(targetDir + "\FrameServer.exp")
-            FileHelp.Delete(targetDir + "\FrameServer.exp")
-            FileHelp.Delete(targetDir + "\FrameServer.ilk")
-            FileHelp.Delete(targetDir + "\FrameServer.lib")
-            FileHelp.Delete(targetDir + "\FrameServer.pdb")
-            FileHelp.Delete(targetDir + "\StaxRip.vshost.exe")
-            FileHelp.Delete(targetDir + "\StaxRip.vshost.exe.config")
-            FileHelp.Delete(targetDir + "\StaxRip.vshost.exe.manifest")
-            FileHelp.Delete(targetDir + "\StaxRip.vshost.sln")
-
-            For Each i In Directory.GetFiles(targetDir, "*.ini", IO.SearchOption.AllDirectories)
-                Throw New Exception("ini file found:" + BR2 + i)
-            Next
-
-            Using p As New Process
-                p.StartInfo.FileName = "C:\Program Files\7-Zip\7z.exe"
-                p.StartInfo.Arguments = $"a -t7z -mx9 ""{targetDir}.7z"" -r ""{targetDir}\*"""
-                p.Start()
-                p.WaitForExit()
-
-                If p.ExitCode > 0 Then
-                    Throw New Exception($"7zip exit code: {p.ExitCode}")
-                End If
-            End Using
-
-            If releaseType = "-beta" Then
-                Dim outputDirectories = {
-                    "C:\Users\frank\Dropbox\public\StaxRip\Builds",
-                    "C:\Users\frank\OneDrive\StaxRip\Builds"}
-
-                For Each outDir In outputDirectories
-                    If Directory.Exists(outDir) Then
-                        FileHelp.Copy(targetDir.TrimEnd("\"c) + ".7z",
-                                      outDir + "\" + DirPath.GetName(targetDir) + ".7z",
-                                      Microsoft.VisualBasic.FileIO.UIOption.AllDialogs)
-
-                        Process.Start(outDir)
-                    End If
-                Next
-            End If
-        Catch ex As Exception
-            g.ShowException(ex)
-        End Try
-    End Sub
-
     <Command("Plays a mp3, wav Or wmv sound file.")>
-    Sub PlaySound(<Editor(GetType(OpenFileDialogEditor), GetType(UITypeEditor)),
-        Description("Filepath To a mp3, wav Or wmv sound file.")> Filepath As String,
-        <DispName("Volume (%)"), DefaultValue(20)> Volume As Integer)
+    Sub PlaySound(
+        <Editor(GetType(OpenFileDialogEditor), GetType(UITypeEditor))>
+        <Description("Filepath to a mp3, wav or wmv sound file.")>
+        FilePath As String,
+        <DispName("Volume (%)")>
+        <DefaultValue(20)>
+        Volume As Integer)
 
-        Misc.PlayAudioFile(Filepath, Volume)
+        Misc.PlayAudioFile(FilePath, Volume)
     End Sub
 
     Function GetReleaseType() As String
         Dim version = Assembly.GetExecutingAssembly.GetName.Version
-        If version.MinorRevision <> 0 Then Return "Beta"
-        Return "Stable"
+
+        If version.MinorRevision <> 0 Then
+            Return "Beta"
+        End If
     End Function
 
     <Command("Opens a given help topic In the help browser.")>
@@ -641,30 +280,25 @@ Switches
         <DispName("Help Topic"),
         Description("Name Of the help topic To be opened.")> topic As String)
 
-        Dim f As New HelpForm()
+        Dim form As New HelpForm()
 
         Select Case topic
             Case "info"
-                f.Doc.WriteStart("StaxRip " + Application.ProductVersion + " " + GetReleaseType())
-                f.Doc.WriteP("Thanks for icon artwork: Freepik www.flaticon.com, ilko-k, nulledone, vanontom")
+                form.Doc.WriteStart("StaxRip " + Application.ProductVersion + " " + GetReleaseType())
+                form.Doc.Write("Development", "stax76, Revan654")
+                form.Doc.Write("Contributions", "Patman, 44vince44, JKyle, NikosD, qyot27, ernst, Brother John, Freepik, ilko-k, nulledone, vanontom")
+
                 Dim licensePath = Folder.Startup + "License.txt"
-                If File.Exists(licensePath) Then f.Doc.WriteP(licensePath.ReadAllText, True)
-            Case "CRF Value"
-                f.Doc.WriteStart("CRF Value")
-                f.Doc.WriteP("Low values produce high quality, large file size, large value produces small file size And poor quality. A balanced value Is 23 which Is the defalt In x264. Common values are 18-26 where 18 produces near transparent quality at the cost Of a huge file size. The quality 26 produces Is rather poor so such a high value should only be used When a small file size Is the only criterium.")
-            Case "x264 Mode"
-                f.Doc.WriteStart("x264 Mode")
-                f.Doc.WriteP("Generally there are two popular encoding modes, quality based And 2pass. 2pass mode allows To specify a bit rate And file size, quality mode doesn't, it works with a rate factor and requires only a single pass. Other terms for quality mode are constant quality or CRF mode in x264.")
-                f.Doc.WriteP("Slow and dark sources compress better then colorful sources with a lot action so a short, slow and dark movie requires a smaller file size then a long, colorful source with a lot action and movement.")
-                f.Doc.WriteP("Quality mode works with a rate factor that gives comparable quality regardless of how well a movie compresses so it's not using a constant bit rate but adjusts the bit rate dynamically. So while the same rate factor can be applied to every movie to achieve a constant quality this is not possible with 2pass mode because every movie requires a different bit rate. Quality mode is much easier to use then 2pass mode which requires a longer encoding time due to 2 passes and a compressibility check to be performed to determine a reasonable image and file size which also requires more expertise.")
-                f.Doc.WriteP("It's a common misconception that 2pass mode is more efficient than quality mode. The only benefit of 2pass mode is hitting a exact file size. Encoding in quality mode using a single pass will result in equal quality compared to a 2pass encode assuming the file size is identical of course.")
-                f.Doc.WriteP("Quality mode is ideal for hard drive storage and 2pass mode is ideal for size restricted mediums like CD's and DVD's. If you are still not sure which mode to use then it's probably better to use quality mode.")
+
+                If File.Exists(licensePath) Then
+                    form.Doc.WriteParagraph(licensePath.ReadAllText, True)
+                End If
             Case Else
-                f.Doc.WriteStart("unknown topic")
-                f.Doc.WriteP("The requested help topic '''" + topic + "''' is unknown.")
+                form.Doc.WriteStart("unknown topic")
+                form.Doc.WriteParagraph("The requested help topic '''" + topic + "''' is unknown.")
         End Select
 
-        f.Show()
+        form.Show()
     End Sub
 
     <Command("Shows a message box.")>
@@ -674,7 +308,7 @@ Switches
         <Editor(GetType(MacroStringTypeEditor), GetType(UITypeEditor))>
         mainInstruction As String,
         <DispName("Content")>
-        <Description("Content may contain macros.")>
+        <Description("May contain macros.")>
         <Editor(GetType(MacroStringTypeEditor), GetType(UITypeEditor))>
         Optional content As String = Nothing,
         <DispName("Icon")>
@@ -684,47 +318,54 @@ Switches
         Msg(Macro.Expand(mainInstruction), Macro.Expand(content), icon, TaskDialogButtons.Ok)
     End Sub
 
+    <Command("Shows a Open File dialog to show media info.")>
+    Sub ShowMediaInfoBrowse()
+        Using dialog As New OpenFileDialog
+            If dialog.ShowDialog = DialogResult.OK Then
+                g.DefaultCommands.ShowMediaInfo(dialog.FileName)
+            End If
+        End Using
+    End Sub
+
     <Command("Shows media info on a given file.")>
     Sub ShowMediaInfo(
         <DispName("Filepath")>
-        <Description("The filepath may contain macros.")>
+        <Description("May contain macros.")>
         <Editor(GetType(MacroStringTypeEditor), GetType(UITypeEditor))>
         filepath As String)
 
         filepath = Macro.Expand(filepath)
 
         If File.Exists(filepath) Then
-            Dim path = Registry.CurrentUser.GetString("Software\Microsoft\Windows\CurrentVersion\App Paths\MediaInfoNET.exe", Nothing)
-
-            If File.Exists(path) Then
-                g.StartProcess(path, filepath.Escape)
-            Else
-                g.StartProcess(Application.ExecutablePath, "-mediainfo " + filepath.Escape)
-            End If
+            g.ShellExecute(Package.MediaInfoNET.Path, filepath.Escape)
         Else
-            MsgWarn("No file found.")
+            Using dialog As New OpenFileDialog
+                If dialog.ShowDialog = DialogResult.OK Then
+                    ShowMediaInfo(dialog.FileName)
+                End If
+            End Using
         End If
     End Sub
 
     <Command("Copies a string to the clipboard.")>
     Sub CopyToClipboard(
         <DispName("Value")>
-        <Description("Copies the text to the clipboard. The text may contain macros.")>
+        <Description("Copies text to the clipboard. May contain macros.")>
         <Editor(GetType(MacroStringTypeEditor), GetType(UITypeEditor))>
         value As String)
 
         Macro.Expand(value).ToClipboard()
     End Sub
 
-    <Command("Writes a log message to the process window.")>
+    <Command("Writes a log message to the log file.")>
     Sub WriteLog(
-        <DispName("Header"), Description("Header is optional.")>
+        <DispName("Header"), Description("Header is optional and may contain macros.")>
         header As String,
         <DispName("Message"), Description("Message is optional and may contain macros."),
         Editor(GetType(MacroStringTypeEditor), GetType(UITypeEditor))>
         message As String)
 
-        Log.WriteHeader(header)
+        Log.WriteHeader(Macro.Expand(header))
         Log.WriteLine(Macro.Expand(message))
     End Sub
 
@@ -757,7 +398,7 @@ Switches
         End Try
     End Sub
 
-    <Command("Changes the video encoders settings.")>
+    <Command("Changes video encoder settings.")>
     Sub ImportVideoEncoderCommandLine(
         <DispName("Command Line")>
         commandLine As String)
@@ -789,11 +430,557 @@ Switches
                       <Editor(GetType(MacroStringTypeEditor), GetType(UITypeEditor))>
                       path As String)
 
-        g.MainForm.BeginInvoke(Sub() p.TargetFile = Macro.Expand(path))
+        p.TargetFile = Macro.Expand(path)
     End Sub
 
-    <Command("Loads the source file.")>
+    <Command("Loads a source file.")>
     Sub LoadSourceFile(<DispName("Source File Path")> path As String)
         g.MainForm.OpenVideoSourceFile(path)
+    End Sub
+
+    <Command("Shows a Open File dialog to open a file to be shown by the console tool mkvinfo.")>
+    Sub ShowMkvInfo()
+        Using dialog As New OpenFileDialog
+            dialog.Filter = "MKV|*.mkv"
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                g.RunCodeInTerminal($"& '{Package.mkvinfo.Path}' '{dialog.FileName}'")
+            End If
+        End Using
+    End Sub
+
+    <Command("Shows a Open File dialog to add the remaining HDR10 Metadata to a MKV file.")>
+    Sub SaveMKVHDR()
+        Using dialog As New OpenFileDialog
+            dialog.Filter = "mkv|*.mkv"
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                Try
+                    MKVInfo.MetadataHDR(dialog.FileName, Nothing)
+                Catch ex As Exception
+                    g.ShowException(ex)
+                End Try
+            End If
+        End Using
+    End Sub
+
+    <Command("Shows a Open File dialog to generate a short GIF.")>
+    Sub SaveGIF()
+        Using dialog As New OpenFileDialog
+            dialog.Multiselect = True
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                Using f As New SimpleSettingsForm("Gif Options")
+                    f.ScaleClientSize(27, 18)
+
+                    Dim ui = f.SimpleUI
+                    Dim page = ui.CreateFlowPage("main page")
+                    ui.Store = s
+                    page.SuspendLayout()
+
+                    Dim paletteGen = ui.AddMenu(Of String)
+                    Dim compression = ui.AddMenu(Of String)
+                    Dim paletteUse = ui.AddMenu(Of String)
+
+                    Dim time = ui.AddNum()
+                    time.Text = "Starting Time:"
+                    time.Config = {1.0, 3600.0, 0.2, 1}
+                    time.Help = "The Time Position Where the Animation Should start at in Seconds"
+                    time.NumEdit.Value = s.Storage.GetDouble("GifTime", 15.0)
+                    time.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("GifTime", value)
+
+                    Dim length = ui.AddNum()
+                    length.Text = "Length:"
+                    length.Config = {1.0, 9.0, 0.2, 1}
+                    length.Help = "The Length of the Animation in Seconds"
+                    length.NumEdit.Value = s.Storage.GetDouble("GifLength", 4.2)
+                    length.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("GifLength", value)
+
+                    Dim frameRate = ui.AddNum()
+                    frameRate.Text = "Framerate:"
+                    frameRate.Config = {15, 60}
+                    frameRate.NumEdit.Value = s.Storage.GetInt("GifFrameRate", 15)
+                    frameRate.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("GifFrameRate", CInt(value))
+
+                    Dim scale = ui.AddNum()
+                    scale.Text = "Scale:"
+                    scale.Config = {240, 2160}
+                    scale.NumEdit.Value = s.Storage.GetInt("GifScale", 480)
+                    scale.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("GifScale", CInt(value))
+
+                    paletteGen.Text = "Statistics Mode:"
+                    paletteGen.Add("Full", "full")
+                    paletteGen.Add("Difference", "diff")
+                    paletteGen.Button.Value = s.Storage.GetString("PaletteGen", "diff")
+                    paletteGen.Button.SaveAction = Sub(value) s.Storage.SetString("PaletteGen", value)
+
+                    paletteUse.Text = "Diff Mode:"
+                    paletteUse.Add("Rectangle", "rectangle")
+                    paletteUse.Add("None", "none")
+                    paletteUse.Button.Value = s.Storage.GetString("PaletteUse", "rectangle")
+                    paletteUse.Button.SaveAction = Sub(value) s.Storage.SetString("PaletteUse", value)
+
+                    compression.Text = "Dither:"
+                    compression.Add("Bayer Scale", "dither=bayer:bayer_scale=5")
+                    compression.Add("Heckbert", "dither=heckbert")
+                    compression.Add("Floyd Steinberg", "dither=floyd_steinberg")
+                    compression.Add("Sierra 2", "dither=sierra2")
+                    compression.Add("Sierra 2_4a", "dither=sierra2_4a")
+                    compression.Add("None", "dither=none")
+                    compression.Button.Value = s.Storage.GetString("GifDither", "dither=floyd_steinberg")
+                    compression.Button.SaveAction = Sub(value) s.Storage.SetString("GifDither", value)
+
+                    Dim output = ui.AddBool()
+                    output.Text = "Output Path"
+                    output.Checked = s.Storage.GetBool("GifOutput", False)
+                    output.SaveAction = Sub(value) s.Storage.SetBool("GifOutput", value)
+
+                    Dim customDirectory = ui.AddTextMenu() 'Custom Output Folder
+                    customDirectory.Label.Visible = False
+                    customDirectory.Edit.Text = s.Storage.GetString("GifDirectory", p.DefaultTargetFolder)
+                    customDirectory.Edit.SaveAction = Sub(value) s.Storage.SetString("GifDirectory", value)
+                    customDirectory.AddMenu("Browse Folder...", Function() g.BrowseFolder(p.DefaultTargetFolder))
+
+                    AddHandler output.CheckStateChanged, Sub() customDirectory.Visible = output.Checked = True
+
+                    customDirectory.Visible = output.Checked = True
+
+                    page.ResumeLayout()
+
+                    If f.ShowDialog() = DialogResult.OK Then
+                        ui.Save()
+
+                        For Each i In dialog.FileNames
+                            Try
+                                Animation.GIF(i, Nothing)
+                            Catch ex As Exception
+                                g.ShowException(ex)
+                            End Try
+                        Next
+                    End If
+                End Using
+            End If
+        End Using
+    End Sub
+
+    <Command("Shows a Open File dialog to generate thumbnails using mtn engine")>
+    Sub SaveMTN()
+        Using dialog As New OpenFileDialog
+            dialog.Multiselect = True
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                Using form As New SimpleSettingsForm("Thumbnail Options")
+                    form.ScaleClientSize(27, 15)
+
+                    Dim ui = form.SimpleUI
+                    Dim page = ui.CreateFlowPage("main page")
+                    ui.Store = s
+                    page.SuspendLayout()
+
+                    Dim column = ui.AddNum()
+                    column.Text = "Columns:"
+                    column.Config = {1, 12}
+                    column.NumEdit.Value = s.Storage.GetInt("MTNColumn", 4)
+                    column.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNColumn", CInt(value))
+
+                    Dim row = ui.AddNum()
+                    row.Text = "Rows:"
+                    row.Config = {1, 12}
+                    row.NumEdit.Value = s.Storage.GetInt("MTNRow", 6)
+                    row.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNRow", CInt(value))
+
+                    Dim quality = ui.AddNum()
+                    quality.Text = "Quality:"
+                    quality.Config = {25, 100}
+                    quality.NumEdit.Value = s.Storage.GetInt("MTNQuality", 95)
+                    quality.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNQuality", CInt(value))
+
+                    Dim height = ui.AddNum()
+                    height.Text = "Height:"
+                    height.Config = {150, 500}
+                    height.NumEdit.Value = s.Storage.GetInt("MTNHeight", 250)
+                    height.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNHeight", CInt(value))
+
+                    Dim width = ui.AddNum()
+                    width.Text = "Width:"
+                    width.Config = {960, 2000}
+                    width.NumEdit.Value = s.Storage.GetInt("MTNWidth", 1920)
+                    width.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNWidth", CInt(value))
+
+                    Dim depth = ui.AddNum()
+                    depth.Text = "Depth:"
+                    depth.Config = {4, 12}
+                    depth.NumEdit.Value = s.Storage.GetInt("MTNDepth", 12)
+                    depth.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNDepth", CInt(value))
+
+                    Dim output = ui.AddBool()
+                    output.Text = "Custom Output"
+                    output.Checked = s.Storage.GetBool("MTNOutput", False)
+                    output.SaveAction = Sub(value) s.Storage.SetBool("MTNOutput", value)
+
+                    Dim customDir = ui.AddTextMenu() 'Custom Output Directory
+                    customDir.Label.Visible = False
+                    customDir.Edit.Text = s.Storage.GetString("MTNDirectory", p.DefaultTargetFolder)
+                    customDir.Edit.SaveAction = Sub(value) s.Storage.SetString("MTNDirectory", value)
+                    customDir.AddMenu("Browse Folder...", Function() g.BrowseFolder(p.DefaultTargetFolder))
+
+                    AddHandler output.CheckStateChanged, Sub()
+                                                             customDir.Visible = output.Checked = True
+                                                         End Sub
+
+                    customDir.Visible = output.Checked = True
+
+                    page.ResumeLayout()
+
+                    If form.ShowDialog() = DialogResult.OK Then
+                        ui.Save()
+
+                        For Each i In dialog.FileNames
+                            Try
+                                MTN.Thumbnails(i, Nothing)
+                            Catch ex As Exception
+                                g.ShowException(ex)
+                            End Try
+                        Next
+
+                    End If
+                End Using
+            End If
+        End Using
+    End Sub
+
+    <Command("Shows a open file dialog to create a high quality PNG animation.")>
+    Sub SavePNG()
+        Using dialog As New OpenFileDialog
+            dialog.Multiselect = True
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                Using form As New SimpleSettingsForm("PNG Options")
+                    form.ScaleClientSize(27, 15)
+
+                    Dim ui = form.SimpleUI
+                    Dim page = ui.CreateFlowPage("main page")
+                    ui.Store = s
+                    page.SuspendLayout()
+
+                    Dim opt = ui.AddMenu(Of String)
+
+                    Dim time = ui.AddNum()
+                    time.Text = "Starting Time:"
+                    time.Config = {1.0, 3600.0, 0.2, 1}
+                    time.Help = "The Time Position Where the Animation Should start at in Seconds"
+                    time.NumEdit.Value = s.Storage.GetDouble("PNGTime", 15.0)
+                    time.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("PNGTime", value)
+
+                    Dim len = ui.AddNum()
+                    len.Text = "Length:"
+                    len.Config = {1.0, 9.0, 0.2, 1}
+                    len.Help = "The Length of the Animation in Seconds"
+                    len.NumEdit.Value = s.Storage.GetDouble("PNGLength", 3.8)
+                    len.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("PNGLength", value)
+
+                    Dim frameRate = ui.AddNum()
+                    frameRate.Text = "FrameRate:"
+                    frameRate.Config = {15, 60}
+                    frameRate.NumEdit.Value = s.Storage.GetInt("PNGFrameRate", 15)
+                    frameRate.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("PNGFrameRate", CInt(value))
+
+                    Dim scale = ui.AddNum()
+                    scale.Text = "Scale:"
+                    scale.Config = {240, 2160}
+                    scale.Help = "The Size to Scale the Resolution to"
+                    scale.NumEdit.Value = s.Storage.GetInt("PNGScale", 480)
+                    scale.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("PNGScale", CInt(value))
+
+                    Dim settings = ui.AddBool()
+                    settings.Text = "Enable Opt"
+                    settings.Help = "Enable or Disable the Usage of PNG Opt"
+                    settings.Checked = s.Storage.GetBool("OptSetting", False)
+                    settings.SaveAction = Sub(value) s.Storage.SetBool("OptSetting", value)
+                    AddHandler settings.CheckStateChanged, Sub()
+                                                               opt.Visible = settings.Checked = True
+                                                           End Sub
+
+                    opt.Text = "Opt Settings:"
+                    opt.Add("Zlib", "-z0")
+                    opt.Add("7zip", "-z1")
+                    opt.Add("Zopfli", "-z2")
+                    opt.Help = "Compression and Optimization Method Used" + BR + "ZLib = Fastest" + BR + "7Zip = Balance" + BR + "Zopfli = Slowest"
+                    opt.Button.Value = s.Storage.GetString("PNGopt", "-z1")
+                    opt.Button.SaveAction = Sub(value) s.Storage.SetString("PNGopt", value)
+
+                    opt.Visible = settings.Checked = True
+
+                    Dim output = ui.AddBool()
+                    output.Text = "Output Path"
+                    output.Checked = s.Storage.GetBool("PNGOutput", False)
+                    output.SaveAction = Sub(value) s.Storage.SetBool("PNGOutput", value)
+
+                    Dim customDir = ui.AddTextMenu() 'Custom Output Directory
+                    customDir.Label.Visible = False
+                    customDir.Edit.Text = s.Storage.GetString("PNGDirectory", p.DefaultTargetFolder)
+                    customDir.Edit.SaveAction = Sub(value) s.Storage.SetString("PNGDirectory", value)
+                    customDir.AddMenu("Browse Folder...", Function() g.BrowseFolder(p.DefaultTargetFolder))
+
+                    AddHandler output.CheckStateChanged, Sub()
+                                                             customDir.Visible = output.Checked = True
+                                                         End Sub
+
+                    customDir.Visible = output.Checked = True
+
+                    page.ResumeLayout()
+
+                    If form.ShowDialog() = DialogResult.OK Then
+                        ui.Save()
+
+                        For Each i In dialog.FileNames
+                            Try
+                                Animation.aPNG(i, Nothing)
+                            Catch ex As Exception
+                                g.ShowException(ex)
+                            End Try
+                        Next
+                    End If
+                End Using
+            End If
+        End Using
+    End Sub
+
+    <Command("Shows a dialog to generate thumbnails.")>
+    Sub ShowBatchGenerateThumbnailsDialog()
+        Using dialog As New OpenFileDialog
+            dialog.SetFilter(FileTypes.Video)
+            dialog.Multiselect = True
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                Using form As New SimpleSettingsForm("Thumbnail Options")
+                    form.ScaleClientSize(27, 20)
+
+                    Dim ui = form.SimpleUI
+                    Dim page = ui.CreateFlowPage("main page")
+                    ui.Store = s
+                    page.SuspendLayout()
+
+                    Dim row As SimpleUI.NumBlock
+                    Dim interval As SimpleUI.NumBlock
+
+                    Dim mode = ui.AddMenu(Of Integer)
+                    mode.Text = "Row Count Mode"
+                    mode.Expandet = True
+                    mode.Add("Manual", 0)
+                    mode.Add("Row count is calculated based on time interval", 1)
+                    mode.Button.Value = s.Storage.GetInt("Thumbnail Mode")
+                    mode.Button.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Mode", value)
+
+                    AddHandler mode.Button.ValueChangedUser, Sub()
+                                                                 row.Visible = mode.Button.Value = 0
+                                                                 interval.Visible = mode.Button.Value = 1
+                                                             End Sub
+                    Dim m = ui.AddMenu(Of Integer)
+                    m.Text = "Timestamp Position"
+                    m.Add("Left Top", 0)
+                    m.Add("Right Top", 1)
+                    m.Add("Left Bottom", 2)
+                    m.Add("Right Bottom", 3)
+                    m.Button.Value = s.Storage.GetInt("Thumbnail Position", 3)
+                    m.Button.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Position", value)
+
+                    Dim k = ui.AddMenu(Of String)
+                    k.Text = "Picture Format:"
+                    k.Add("JPG", "jpg")
+                    k.Add("PNG", "png")
+                    k.Add("TIFF", "tiff")
+                    k.Add("BMP", "bmp")
+                    k.Button.Value = s.Storage.GetString("Picture Format", "png")
+                    k.Button.SaveAction = Sub(value) s.Storage.SetString("Picture Format", CStr(value))
+
+                    Dim cp = ui.AddColorPicker()
+                    cp.Text = "Background Color"
+                    cp.Field = NameOf(s.ThumbnailBackgroundColor)
+
+                    Dim nb = ui.AddNum()
+                    nb.Text = "Thumbnail Width:"
+                    nb.Config = {200, 4000, 10}
+                    nb.NumEdit.Value = s.Storage.GetInt("Thumbnail Width", 500)
+                    nb.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Width", CInt(value))
+
+                    nb = ui.AddNum()
+                    nb.Text = "Column Count:"
+                    nb.Config = {1, 20}
+                    nb.NumEdit.Value = s.Storage.GetInt("Thumbnail Columns", 4)
+                    nb.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Columns", CInt(value))
+
+                    row = ui.AddNum()
+                    row.Text = "Row Count:"
+                    row.Config = {1, 20}
+                    row.NumEdit.Value = s.Storage.GetInt("Thumbnail Rows", 6)
+                    row.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Rows", CInt(value))
+
+                    interval = ui.AddNum()
+                    interval.Text = "Interval (seconds):"
+                    interval.NumEdit.Value = s.Storage.GetInt("Thumbnail Interval")
+                    interval.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Interval", CInt(value))
+
+                    row.Visible = mode.Button.Value = 0
+                    interval.Visible = mode.Button.Value = 1
+
+                    Dim margin = ui.AddNum()
+                    margin.Text = "Margin:"
+                    margin.Config = {0, 100}
+                    margin.NumEdit.Value = s.Storage.GetInt("Thumbnail Margin", 5)
+                    margin.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Margin", CInt(value))
+
+                    Dim cq = ui.AddNum()
+                    cq.Text = "Compression Quality:"
+                    cq.Config = {1, 100}
+                    cq.NumEdit.Value = s.Storage.GetInt("Thumbnail Compression Quality", 95)
+                    cq.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Compression Quality", CInt(value))
+                    AddHandler k.Button.ValueChangedUser, Sub() cq.Visible = k.Button.Value = "jpg"
+
+                    Dim logo = ui.AddBool()
+                    logo.Text = "Disable StaxRip Logo"
+                    logo.Help = "Enable or disable the StaxRip Watermark"
+                    logo.Checked = s.Storage.GetBool("Logo", False)
+                    logo.SaveAction = Sub(value) s.Storage.SetBool("Logo", CBool(value))
+
+                    Dim output = ui.AddBool()
+                    output.Text = "Output Path"
+                    output.Checked = s.Storage.GetBool("StaxRipOutput", False)
+                    output.SaveAction = Sub(value) s.Storage.SetBool("StaxRipOutput", value)
+
+                    Dim customDir = ui.AddTextButton()
+                    customDir.Visible = output.Checked
+                    customDir.Expandet = True
+                    customDir.Label.Visible = False
+                    customDir.Edit.Text = s.Storage.GetString("StaxRipDirectory", p.DefaultTargetFolder)
+                    customDir.Edit.SaveAction = Sub(value) s.Storage.SetString("StaxRipDirectory", value)
+                    customDir.BrowseFolder()
+
+                    AddHandler output.CheckStateChanged, Sub() customDir.Visible = output.Checked = True
+
+                    page.ResumeLayout()
+
+                    If form.ShowDialog() = DialogResult.OK Then
+                        ui.Save()
+
+                        For Each i In dialog.FileNames
+                            Try
+                                Thumbnails.SaveThumbnails(i, Nothing)
+                            Catch ex As Exception
+                                g.ShowException(ex)
+                            End Try
+                        Next
+
+                        MsgInfo("Thumbnails have been created.")
+                    End If
+                End Using
+            End If
+        End Using
+    End Sub
+
+    <Command("Presents MediaInfo of all files in a folder in a grid view.")>
+    Sub ShowMediaInfoFolderViewDialog()
+        Using dialog As New FolderBrowserDialog
+            dialog.ShowNewFolderButton = False
+            dialog.SetSelectedPath(s.Storage.GetString("MediaInfo Folder View folder"))
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                s.Storage.SetString("MediaInfo Folder View folder", dialog.SelectedPath)
+                g.InvokePowerShellCode($". '{Package.GetMediaInfo.Path}'; Get-ChildItem '{dialog.SelectedPath}' | Get-MediaInfo | Out-GridView")
+            End If
+        End Using
+    End Sub
+
+    <Command("Shows a dialog allowing to reset specific settings.")>
+    Sub ResetSettings()
+        Dim sb As New SelectionBox(Of String)
+
+        sb.Title = "Reset Settings"
+        sb.Text = "Please select a setting to reset."
+
+        Dim appSettings As New ApplicationSettings
+        appSettings.Init()
+
+        For Each i In appSettings.Versions.Keys
+            sb.AddItem(i)
+        Next
+
+        sb.Items.Sort()
+
+        If sb.Show = DialogResult.OK Then
+            s.Versions(sb.SelectedValue) = 0
+            MsgInfo("Will be reseted on next startup.")
+        End If
+    End Sub
+
+    <Command("This command is obsolete since 2020.")>
+    Sub ShowLAVFiltersConfigDialog()
+        Dim ret = Registry.ClassesRoot.GetString("CLSID\" + GUIDS.LAVVideoDecoder.ToString + "\InprocServer32", Nothing)
+
+        If File.Exists(ret) Then
+            Static loaded As Boolean
+
+            If Not loaded Then
+                Native.LoadLibrary(ret)
+                loaded = True
+            End If
+
+            OpenConfiguration(Nothing, Nothing, Nothing, Nothing)
+        Else
+            MsgError("The LAV Filters video decoder library could not be located.")
+        End If
+    End Sub
+
+    <DllImport("LAVVideo.ax")>
+    Shared Sub OpenConfiguration(hwnd As IntPtr, hinst As IntPtr, lpszCmdLine As String, nCmdShow As Integer)
+    End Sub
+
+    <Command("This command is obsolete since 2020.")>
+    Sub ShowCommandPrompt()
+        g.RunCommandInTerminal("cmd.exe")
+    End Sub
+
+    <Command("This command is obsolete since 2020.")>
+    Sub ShowPowerShell()
+        g.RunCommandInTerminal("powershell.exe")
+    End Sub
+
+    <Command("This command is obsolete since 2020.")>
+    Sub ExecuteBatchScript(
+        <DispName("Batch Script Code"),
+        Description("Batch script code to be executed. Macros are solved as well as passed in as environment variables."),
+        Editor(GetType(CommandLineTypeEditor), GetType(UITypeEditor))>
+        batchScript As String)
+
+        Dim batchPath = Folder.Temp + Guid.NewGuid.ToString + ".bat"
+        Dim batchCode = Macro.Expand(batchScript)
+        File.WriteAllText(batchPath, batchCode, Encoding.Default)
+        AddHandler g.MainForm.Disposed, Sub() FileHelp.Delete(batchPath)
+
+        Using proc As New Proc
+            proc.Header = "Execute Batch Script"
+            proc.WriteLog(batchCode + BR2)
+            proc.File = "cmd.exe"
+            proc.Arguments = "/C call """ + batchPath + """"
+            proc.Wait = True
+            proc.Process.StartInfo.UseShellExecute = False
+
+            Try
+                proc.Start()
+            Catch ex As Exception
+                g.ShowException(ex)
+                Log.WriteLine(ex.Message)
+            End Try
+        End Using
+    End Sub
+
+    <Command("This command is obsolete since 2020.")>
+    Sub MediainfoMKV()
+        ShowMkvInfo()
+    End Sub
+
+    <Command("This command is obsolete since 2020.")>
+    Sub MediaInfoShowMedia()
+        ShowMediaInfoBrowse()
     End Sub
 End Class

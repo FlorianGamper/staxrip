@@ -1,5 +1,9 @@
 
 Imports System.Globalization
+Imports System.Runtime.InteropServices
+Imports System.Text
+Imports System.Threading.Tasks
+
 Imports StaxRip.UI
 
 Public Class AppsForm
@@ -26,11 +30,14 @@ Public Class AppsForm
     Friend WithEvents tsbWebsite As System.Windows.Forms.ToolStripButton
     Friend WithEvents tlpMain As TableLayoutPanel
     Friend WithEvents tsbDownload As ToolStripButton
-    Friend WithEvents tsbPath As ToolStripButton
     Friend WithEvents tsbVersion As ToolStripButton
-    Friend WithEvents ddTools As ToolStripDropDownButton
-    Friend WithEvents miCSV As ToolStripMenuItem
-    Friend WithEvents miStatus As ToolStripMenuItem
+    Friend WithEvents ddbTools As ToolStripDropDownButton
+    Friend WithEvents miShowGridView As MenuItemEx
+    Friend WithEvents miStatus As MenuItemEx
+    Friend WithEvents ddbPath As ToolStripDropDownButton
+    Friend WithEvents miBrowsePath As MenuItemEx
+    Friend WithEvents miClearCustomPath As MenuItemEx
+    Friend WithEvents miSearchUsingEverything As MenuItemEx
     Friend WithEvents tsbExplore As System.Windows.Forms.ToolStripButton
     <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AppsForm))
@@ -40,15 +47,18 @@ Public Class AppsForm
         Me.tsbExplore = New System.Windows.Forms.ToolStripButton()
         Me.tsbWebsite = New System.Windows.Forms.ToolStripButton()
         Me.tsbDownload = New System.Windows.Forms.ToolStripButton()
-        Me.tsbPath = New System.Windows.Forms.ToolStripButton()
         Me.tsbVersion = New System.Windows.Forms.ToolStripButton()
-        Me.ddTools = New System.Windows.Forms.ToolStripDropDownButton()
-        Me.miCSV = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ddbPath = New System.Windows.Forms.ToolStripDropDownButton()
+        Me.miBrowsePath = New StaxRip.UI.MenuItemEx()
+        Me.miClearCustomPath = New StaxRip.UI.MenuItemEx()
+        Me.miSearchUsingEverything = New StaxRip.UI.MenuItemEx()
+        Me.ddbTools = New System.Windows.Forms.ToolStripDropDownButton()
+        Me.miShowGridView = New StaxRip.UI.MenuItemEx()
+        Me.miStatus = New StaxRip.UI.MenuItemEx()
         Me.tsbHelp = New System.Windows.Forms.ToolStripButton()
         Me.flp = New System.Windows.Forms.FlowLayoutPanel()
         Me.SearchTextBox = New StaxRip.SearchTextBox()
         Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
-        Me.miStatus = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStrip.SuspendLayout()
         Me.tlpMain.SuspendLayout()
         Me.SuspendLayout()
@@ -59,6 +69,7 @@ Public Class AppsForm
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.tv.AutoCollaps = True
+        Me.tv.BackColor = System.Drawing.SystemColors.Control
         Me.tv.ExpandMode = StaxRip.UI.TreeNodeExpandMode.InclusiveChilds
         Me.tv.FullRowSelect = True
         Me.tv.HideSelection = False
@@ -69,7 +80,7 @@ Public Class AppsForm
         Me.tv.SelectOnMouseDown = True
         Me.tv.ShowLines = False
         Me.tv.ShowPlusMinus = False
-        Me.tv.Size = New System.Drawing.Size(401, 1018)
+        Me.tv.Size = New System.Drawing.Size(453, 1018)
         Me.tv.Sorted = True
         Me.tv.TabIndex = 0
         '
@@ -80,12 +91,12 @@ Public Class AppsForm
         Me.ToolStrip.Dock = System.Windows.Forms.DockStyle.None
         Me.ToolStrip.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden
         Me.ToolStrip.ImageScalingSize = New System.Drawing.Size(48, 48)
-        Me.ToolStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.tsbLaunch, Me.tsbExplore, Me.tsbWebsite, Me.tsbDownload, Me.tsbPath, Me.tsbVersion, Me.ddTools, Me.tsbHelp})
-        Me.ToolStrip.Location = New System.Drawing.Point(421, 10)
+        Me.ToolStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.tsbLaunch, Me.tsbExplore, Me.tsbWebsite, Me.tsbDownload, Me.tsbVersion, Me.ddbPath, Me.ddbTools, Me.tsbHelp})
+        Me.ToolStrip.Location = New System.Drawing.Point(473, 10)
         Me.ToolStrip.Margin = New System.Windows.Forms.Padding(0, 10, 10, 0)
         Me.ToolStrip.Name = "ToolStrip"
         Me.ToolStrip.Padding = New System.Windows.Forms.Padding(5, 2, 2, 0)
-        Me.ToolStrip.Size = New System.Drawing.Size(1256, 80)
+        Me.ToolStrip.Size = New System.Drawing.Size(1411, 80)
         Me.ToolStrip.TabIndex = 1
         Me.ToolStrip.Text = "tsMain"
         '
@@ -94,8 +105,8 @@ Public Class AppsForm
         Me.tsbLaunch.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
         Me.tsbLaunch.ImageTransparentColor = System.Drawing.Color.Magenta
         Me.tsbLaunch.Name = "tsbLaunch"
-        Me.tsbLaunch.Size = New System.Drawing.Size(136, 69)
-        Me.tsbLaunch.Text = "Launch"
+        Me.tsbLaunch.Size = New System.Drawing.Size(156, 69)
+        Me.tsbLaunch.Text = " Launch "
         Me.tsbLaunch.ToolTipText = "Launches the app"
         '
         'tsbExplore
@@ -103,8 +114,8 @@ Public Class AppsForm
         Me.tsbExplore.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
         Me.tsbExplore.ImageTransparentColor = System.Drawing.Color.Magenta
         Me.tsbExplore.Name = "tsbExplore"
-        Me.tsbExplore.Size = New System.Drawing.Size(142, 69)
-        Me.tsbExplore.Text = "Explore"
+        Me.tsbExplore.Size = New System.Drawing.Size(162, 69)
+        Me.tsbExplore.Text = " Explore "
         Me.tsbExplore.ToolTipText = "Opens the apps folder in File Explorer"
         '
         'tsbWebsite
@@ -112,8 +123,8 @@ Public Class AppsForm
         Me.tsbWebsite.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
         Me.tsbWebsite.ImageTransparentColor = System.Drawing.Color.Magenta
         Me.tsbWebsite.Name = "tsbWebsite"
-        Me.tsbWebsite.Size = New System.Drawing.Size(117, 69)
-        Me.tsbWebsite.Text = " Web "
+        Me.tsbWebsite.Size = New System.Drawing.Size(137, 69)
+        Me.tsbWebsite.Text = "  Web  "
         Me.tsbWebsite.ToolTipText = "Opens the apps website"
         '
         'tsbDownload
@@ -121,52 +132,86 @@ Public Class AppsForm
         Me.tsbDownload.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
         Me.tsbDownload.ImageTransparentColor = System.Drawing.Color.Magenta
         Me.tsbDownload.Name = "tsbDownload"
-        Me.tsbDownload.Size = New System.Drawing.Size(185, 69)
-        Me.tsbDownload.Text = "Download"
+        Me.tsbDownload.Size = New System.Drawing.Size(205, 69)
+        Me.tsbDownload.Text = " Download "
         Me.tsbDownload.ToolTipText = "Opens the apps download web page"
-        '
-        'tsbPath
-        '
-        Me.tsbPath.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
-        Me.tsbPath.ImageTransparentColor = System.Drawing.Color.Magenta
-        Me.tsbPath.Name = "tsbPath"
-        Me.tsbPath.Size = New System.Drawing.Size(113, 69)
-        Me.tsbPath.Text = " Path "
-        Me.tsbPath.ToolTipText = "Edits the apps file location (F11)"
         '
         'tsbVersion
         '
         Me.tsbVersion.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
         Me.tsbVersion.ImageTransparentColor = System.Drawing.Color.Magenta
         Me.tsbVersion.Name = "tsbVersion"
-        Me.tsbVersion.Size = New System.Drawing.Size(141, 69)
-        Me.tsbVersion.Text = "Version"
+        Me.tsbVersion.Size = New System.Drawing.Size(181, 69)
+        Me.tsbVersion.Text = "  Version  "
         Me.tsbVersion.ToolTipText = "Edits the apps version (F12)"
         '
-        'ddTools
+        'ddbPath
         '
-        Me.ddTools.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
-        Me.ddTools.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miCSV, Me.miStatus})
-        Me.ddTools.Image = CType(resources.GetObject("ddTools.Image"), System.Drawing.Image)
-        Me.ddTools.ImageTransparentColor = System.Drawing.Color.Magenta
-        Me.ddTools.Name = "ddTools"
-        Me.ddTools.Size = New System.Drawing.Size(152, 69)
-        Me.ddTools.Text = " Tools "
+        Me.ddbPath.AutoToolTip = False
+        Me.ddbPath.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
+        Me.ddbPath.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miBrowsePath, Me.miClearCustomPath, Me.miSearchUsingEverything})
+        Me.ddbPath.Image = CType(resources.GetObject("ddbPath.Image"), System.Drawing.Image)
+        Me.ddbPath.ImageTransparentColor = System.Drawing.Color.Magenta
+        Me.ddbPath.Name = "ddbPath"
+        Me.ddbPath.Size = New System.Drawing.Size(160, 69)
+        Me.ddbPath.Text = "  Path  "
         '
-        'miCSV
+        'miBrowsePath
         '
-        Me.miCSV.Name = "miCSV"
-        Me.miCSV.Size = New System.Drawing.Size(538, 66)
-        Me.miCSV.Text = "Create CSV file listing all tools"
-        Me.miCSV.ToolTipText = "Generates a CSV file listing all tools"
+        Me.miBrowsePath.Help = Nothing
+        Me.miBrowsePath.Name = "miBrowsePath"
+        Me.miBrowsePath.ShortcutKeyDisplayString = "F11"
+        Me.miBrowsePath.Size = New System.Drawing.Size(738, 67)
+        Me.miBrowsePath.Text = "Browse..."
+        Me.miBrowsePath.ToolTipText = "Show Open File dialog to customize the path"
+        '
+        'miClearCustomPath
+        '
+        Me.miClearCustomPath.Help = Nothing
+        Me.miClearCustomPath.Name = "miClearCustomPath"
+        Me.miClearCustomPath.Size = New System.Drawing.Size(738, 67)
+        Me.miClearCustomPath.Text = "Clear custom path..."
+        '
+        'miSearchUsingEverything
+        '
+        Me.miSearchUsingEverything.Help = Nothing
+        Me.miSearchUsingEverything.Name = "miSearchUsingEverything"
+        Me.miSearchUsingEverything.ShortcutKeyDisplayString = "Ctrl+F"
+        Me.miSearchUsingEverything.Size = New System.Drawing.Size(738, 67)
+        Me.miSearchUsingEverything.Text = "Search using Everything..."
+        '
+        'ddbTools
+        '
+        Me.ddbTools.AutoToolTip = False
+        Me.ddbTools.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
+        Me.ddbTools.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miShowGridView, Me.miStatus})
+        Me.ddbTools.Image = CType(resources.GetObject("ddbTools.Image"), System.Drawing.Image)
+        Me.ddbTools.ImageTransparentColor = System.Drawing.Color.Magenta
+        Me.ddbTools.Name = "ddbTools"
+        Me.ddbTools.Size = New System.Drawing.Size(172, 69)
+        Me.ddbTools.Text = "  Tools  "
+        '
+        'miShowGridView
+        '
+        Me.miShowGridView.Help = Nothing
+        Me.miShowGridView.Name = "miShowGridView"
+        Me.miShowGridView.Size = New System.Drawing.Size(737, 67)
+        Me.miShowGridView.Text = "Show all tools in grid view"
+        '
+        'miStatus
+        '
+        Me.miStatus.Help = Nothing
+        Me.miStatus.Name = "miStatus"
+        Me.miStatus.Size = New System.Drawing.Size(737, 67)
+        Me.miStatus.Text = "Check status of all required tools"
         '
         'tsbHelp
         '
         Me.tsbHelp.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
         Me.tsbHelp.ImageTransparentColor = System.Drawing.Color.Magenta
         Me.tsbHelp.Name = "tsbHelp"
-        Me.tsbHelp.Size = New System.Drawing.Size(119, 69)
-        Me.tsbHelp.Text = " Help "
+        Me.tsbHelp.Size = New System.Drawing.Size(139, 69)
+        Me.tsbHelp.Text = "  Help  "
         Me.tsbHelp.ToolTipText = "Opens the apps help (F1)"
         '
         'flp
@@ -174,13 +219,12 @@ Public Class AppsForm
         Me.flp.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.flp.BackColor = System.Drawing.Color.White
         Me.flp.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
         Me.flp.FlowDirection = System.Windows.Forms.FlowDirection.TopDown
-        Me.flp.Location = New System.Drawing.Point(421, 100)
+        Me.flp.Location = New System.Drawing.Point(473, 100)
         Me.flp.Margin = New System.Windows.Forms.Padding(0, 10, 10, 10)
         Me.flp.Name = "flp"
-        Me.flp.Size = New System.Drawing.Size(1256, 1018)
+        Me.flp.Size = New System.Drawing.Size(1411, 1018)
         Me.flp.TabIndex = 2
         '
         'SearchTextBox
@@ -189,7 +233,7 @@ Public Class AppsForm
         Me.SearchTextBox.Location = New System.Drawing.Point(11, 15)
         Me.SearchTextBox.Margin = New System.Windows.Forms.Padding(11, 10, 11, 0)
         Me.SearchTextBox.Name = "SearchTextBox"
-        Me.SearchTextBox.Size = New System.Drawing.Size(399, 70)
+        Me.SearchTextBox.Size = New System.Drawing.Size(451, 70)
         Me.SearchTextBox.TabIndex = 4
         '
         'tlpMain
@@ -209,21 +253,16 @@ Public Class AppsForm
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.tlpMain.Size = New System.Drawing.Size(1687, 1128)
+        Me.tlpMain.Size = New System.Drawing.Size(1894, 1128)
         Me.tlpMain.TabIndex = 6
-        '
-        'miStatus
-        '
-        Me.miStatus.Name = "miStatus"
-        Me.miStatus.Size = New System.Drawing.Size(538, 66)
-        Me.miStatus.Text = "Check status of all required tools"
         '
         'AppsForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(288.0!, 288.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        Me.ClientSize = New System.Drawing.Size(1687, 1128)
+        Me.ClientSize = New System.Drawing.Size(1894, 1128)
         Me.Controls.Add(Me.tlpMain)
+        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.HelpButton = False
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(11, 10, 11, 10)
@@ -248,16 +287,9 @@ Public Class AppsForm
     Sub New()
         MyBase.New()
         InitializeComponent()
-
-        ScaleClientSize(45, 30)
+        RestoreClientSize(45, 32)
         tv.ItemHeight = CInt(FontHeight * 1.5)
 
-        For Each mi As ToolStripMenuItem In ddTools.DropDownItems
-            mi.AutoSize = False
-            mi.Height = CInt(FontHeight * 1.5)
-        Next
-
-        Text = $"{Package.Items.Count} tools"
         SearchTextBox_TextChanged()
 
         tv.Scrollable = True
@@ -270,20 +302,18 @@ Public Class AppsForm
                                       End Sub
 
         SetupButton.ForeColor = Color.Red
+        SetupButton.TextImageRelation = TextImageRelation.ImageBeforeText
+        SetupButton.Image = StockIcon.GetSmallImage(StockIconIdentifier.Shield)
         SetupButton.Font = New Font("Segoe UI", 10)
         SetupButton.Margin = New Padding(FontHeight \ 3)
         SetupButton.Padding = New Padding(FontHeight \ 5)
-        SetupButton.AutoSize = True
         SetupButton.AutoSizeMode = AutoSizeMode.GrowAndShrink
-        SetupButton.TextImageRelation = TextImageRelation.ImageBeforeText
-        SetupButton.Image = StockIcon.GetSmallImage(StockIconIdentifier.Shield)
+        SetupButton.AutoSize = True
 
-        AddHandler DownloadButton.Click, Sub() g.StartProcess(CurrentPackage.DownloadURL)
-        DownloadButton.AutoSize = True
-        DownloadButton.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        AddHandler DownloadButton.Click, Sub() g.ShellExecute(CurrentPackage.DownloadURL)
         DownloadButton.Font = New Font("Segoe UI", 10)
-        DownloadButton.Margin = New Padding(FontHeight \ 3)
-        DownloadButton.Padding = New Padding(FontHeight \ 5)
+        DownloadButton.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        DownloadButton.AutoSize = True
 
         Dim titleHeaderLabel = New Label With {
             .Font = New Font(flp.Font.FontFamily, 14 * s.UIScaleFactor, FontStyle.Bold),
@@ -316,14 +346,15 @@ Public Class AppsForm
 
         tsbExplore.Enabled = path <> ""
         tsbLaunch.Enabled = Not CurrentPackage.LaunchAction Is Nothing AndAlso CurrentPackage.GetStatus = ""
-        tsbWebsite.Enabled = CurrentPackage.WebURL <> ""
+        tsbWebsite.Enabled = CurrentPackage.URL <> ""
         tsbDownload.Enabled = CurrentPackage.DownloadURL <> ""
         tsbHelp.Enabled = CurrentPackage.HelpFileOrURL <> ""
 
-        tsbVersion.Enabled = Not CurrentPackage.IgnoreVersion AndAlso CurrentPackage.Path.FileExists AndAlso
-            Not (CurrentPackage.IsOldVersion() AndAlso Not CurrentPackage.AllowOldVersion)
+        tsbVersion.Enabled = CurrentPackage.Path.FileExists AndAlso
+            Not (CurrentPackage.IsVersionOld() AndAlso Not CurrentPackage.VersionAllowOld)
 
-        tsbPath.Enabled = CurrentPackage.FixedDir = ""
+        miBrowsePath.Enabled = Not CurrentPackage.Path.StartsWithEx(Folder.System)
+        miSearchUsingEverything.Enabled = miBrowsePath.Enabled
 
         s.StringDictionary("RecentExternalApplicationControl") = CurrentPackage.Name + CurrentPackage.Version
 
@@ -333,23 +364,21 @@ Public Class AppsForm
         Contents("Description").Text = CurrentPackage.Description
 
         If File.Exists(CurrentPackage.Path) Then
-            Contents("Version").Text = CurrentPackage.Version + " (" + File.GetLastWriteTimeUtc(CurrentPackage.Path).ToShortDateString() + ")"
+            Contents("Version").Text = If(CurrentPackage.IsVersionCorrect, CurrentPackage.Version, "Unknown")
+            Contents("Version").Text += " (" + File.GetLastWriteTimeUtc(CurrentPackage.Path).ToShortDateString() + ")"
         Else
-            Contents("Version").Text = CurrentPackage.Version
+            Contents("Version").Text = "-"
         End If
-
-        Headers("Version").Visible = CurrentPackage.IsCorrectVersion AndAlso Not CurrentPackage.IgnoreVersion
-        Contents("Version").Visible = CurrentPackage.IsCorrectVersion AndAlso Not CurrentPackage.IgnoreVersion
 
         Contents("Status").Text = CurrentPackage.GetStatusDisplay()
 
-        If CurrentPackage.GetStatus <> "" Then
+        If CurrentPackage.GetStatus <> "" AndAlso CurrentPackage.Required Then
             Contents("Status").ForeColor = Color.Red
         Else
             Contents("Status").ForeColor = Color.Black
         End If
 
-        Contents("Status").Font = New Font("Segoe UI", 10)
+        Contents("Status").Font = New Font("Segoe UI", 10 * s.UIScaleFactor)
 
         Headers("AviSynth Filters").Visible = False
         Contents("AviSynth Filters").Visible = False
@@ -421,7 +450,7 @@ Public Class AppsForm
         Next
     End Sub
 
-    Private Sub ShowPackage(tn As TreeNode)
+    Sub ShowPackage(tn As TreeNode)
         If Not tn Is Nothing AndAlso Not tn.Tag Is Nothing Then
             Dim newPackage = DirectCast(tn.Tag, Package)
 
@@ -437,31 +466,38 @@ Public Class AppsForm
         MyBase.OnActivated(e)
     End Sub
 
-    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
-        Select Case e.KeyData
+    Protected Overrides Sub OnKeyDown(args As KeyEventArgs)
+        MyBase.OnKeyDown(args)
+
+        Select Case args.KeyData
             Case Keys.F1
                 tsbHelp.PerformClick()
             Case Keys.F10
                 Dim fp = Folder.Startup + "changelog.md"
-                If File.Exists(fp) Then g.StartProcess(fp)
+
+                If File.Exists(fp) Then
+                    g.ShellExecute(fp)
+                End If
             Case Keys.F11
-                tsbPath.PerformClick()
+                miBrowsePath.PerformClick()
             Case Keys.F12
                 tsbVersion.PerformClick()
+            Case Keys.Control Or Keys.F
+                miSearchUsingEverything.PerformClick()
         End Select
-
-        MyBase.OnKeyDown(e)
     End Sub
 
-    Private Sub tv_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles tv.AfterSelect
+    Sub tv_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles tv.AfterSelect
         If e.Node.Tag Is Nothing AndAlso e.Node.Nodes.Count > 0 Then
             tv.SelectedNode = e.Node.Nodes(0)
         End If
 
-        If Not e.Node.Tag Is Nothing Then ShowPackage(e.Node)
+        If Not e.Node.Tag Is Nothing Then
+            ShowPackage(e.Node)
+        End If
     End Sub
 
-    Private Sub SearchTextBox_TextChanged() Handles SearchTextBox.TextChanged
+    Sub SearchTextBox_TextChanged() Handles SearchTextBox.TextChanged
         Dim current = CurrentPackage
 
         tv.BeginUpdate()
@@ -470,7 +506,7 @@ Public Class AppsForm
         For Each pack In Package.Items.Values
             Dim plugin = TryCast(pack, PluginPackage)
 
-            Dim searchString = pack.Name + pack.Description + pack.Version +
+            Dim searchString = pack.Name + pack.Description + pack.Version + pack.WebURL +
                 plugin?.VSFilterNames.Join(" ") + pack.Path + plugin?.AvsFilterNames.Join(" ")
 
             If searchString?.ToLower.Contains(SearchTextBox.Text?.ToLower) Then
@@ -516,50 +552,50 @@ Public Class AppsForm
         tv.EndUpdate()
     End Sub
 
-    Private Sub tsbLaunch_Click(sender As Object, e As EventArgs) Handles tsbLaunch.Click
+    Sub tsbLaunch_Click(sender As Object, e As EventArgs) Handles tsbLaunch.Click
         CurrentPackage.LaunchAction?.Invoke()
     End Sub
 
     <DebuggerNonUserCode()>
-    Private Sub tsbOpenDir_Click(sender As Object, e As EventArgs) Handles tsbExplore.Click
+    Sub tsbOpenDir_Click(sender As Object, e As EventArgs) Handles tsbExplore.Click
         g.SelectFileWithExplorer(CurrentPackage.Path)
     End Sub
 
-    Private Sub tsbHelp_Click(sender As Object, e As EventArgs) Handles tsbHelp.Click
+    Sub tsbHelp_Click(sender As Object, e As EventArgs) Handles tsbHelp.Click
         CurrentPackage.ShowHelp()
     End Sub
 
-    Private Sub tsbWebsite_Click(sender As Object, e As EventArgs) Handles tsbWebsite.Click
-        g.StartProcess(CurrentPackage.WebURL)
+    Sub tsbWebsite_Click(sender As Object, e As EventArgs) Handles tsbWebsite.Click
+        g.ShellExecute(CurrentPackage.URL)
     End Sub
 
-    Private Sub tsbDownload_Click(sender As Object, e As EventArgs) Handles tsbDownload.Click
-        g.StartProcess(CurrentPackage.DownloadURL)
+    Sub tsbDownload_Click(sender As Object, e As EventArgs) Handles tsbDownload.Click
+        g.ShellExecute(CurrentPackage.DownloadURL)
     End Sub
 
-    Private Sub tsbPath_Click(sender As Object, e As EventArgs) Handles tsbPath.Click
-        Using d As New OpenFileDialog
-            d.SetInitDir(s.Storage.GetString(CurrentPackage.Name + "custom path"))
-            d.Filter = "|" + CurrentPackage.Filename + "|All Files|*.*"
-
-            If d.ShowDialog = DialogResult.OK Then
-                s.Storage.SetString(CurrentPackage.Name + "custom path", d.FileName)
-                ShowActivePackage()
-            End If
-        End Using
-    End Sub
-
-    Private Sub tsbVersion_Click(sender As Object, e As EventArgs) Handles tsbVersion.Click
+    Sub tsbVersion_Click(sender As Object, e As EventArgs) Handles tsbVersion.Click
         If Not File.Exists(CurrentPackage.Path) Then
             Exit Sub
         End If
 
-        Dim input = InputBox.Show(
-            "What's the name of this version?" + BR2 +
-            "Enter anything if you don't know or care." + BR2 +
-            "File Data (often incorrect or empty):" + BR2 +
-            "Version: " + FileVersionInfo.GetVersionInfo(CurrentPackage.Path).FileVersion,
-            "StaxRip", CurrentPackage.Version)
+        Dim msg = "What's the name of this version?"
+        Dim version = FileVersionInfo.GetVersionInfo(CurrentPackage.Path)
+
+        Dim fileVersionString = version.FileMajorPart & "." & version.FileMinorPart & "." &
+                                version.FileBuildPart & "." & version.FilePrivatePart
+
+        Dim productVersionString = version.ProductMajorPart & "." & version.ProductMinorPart & "." &
+                                   version.ProductBuildPart & "." & version.ProductPrivatePart
+
+        If fileVersionString <> "0.0.0.0" Then
+            msg += BR2 + "File Version: " + fileVersionString + " (often not correct!)"
+        End If
+
+        If productVersionString <> "0.0.0.0" Then
+            msg += BR2 + "Product Version: " + productVersionString + " (often not correct!)"
+        End If
+
+        Dim input = InputBox.Show(msg, "StaxRip", CurrentPackage.Version)
 
         If input <> "" Then
             input = input.Replace(";", "_")
@@ -567,7 +603,7 @@ Public Class AppsForm
             CurrentPackage.Version = input
             CurrentPackage.VersionDate = File.GetLastWriteTimeUtc(CurrentPackage.Path)
 
-            Dim txt = Application.ProductVersion + BR2
+            Dim txt As String
 
             For Each pack In Package.Items.Values
                 If pack.Version <> "" Then
@@ -577,110 +613,53 @@ Public Class AppsForm
             Next
 
             If Directory.Exists(Folder.Apps) Then
-                txt.FormatColumn("=").WriteFileUtf8(Folder.Apps + "Versions.txt")
+                txt.FormatColumn("=").WriteFileUTF8BOM(Folder.Apps + "Versions.txt")
             End If
 
             ShowActivePackage()
         End If
     End Sub
 
-    Private Sub miCSV_Click(sender As Object, e As EventArgs) Handles miCSV.Click
-        Dim rows As New List(Of List(Of String))
-        Dim headings = {"Name", "Type", "Filename", "Version", "Modified Date", "Folder"}
-        rows.Add(New List(Of String)(headings))
+    Sub miShowGridView_Click(sender As Object, e As EventArgs) Handles miShowGridView.Click
+        Dim rows As New List(Of Object)
 
-        Dim add = Function(value As String) As String
-                      If value Is Nothing Then
-                          value = ""
-                      End If
+        For Each pack In Package.Items.Values.OrderBy(Function(i) i.GetTypeName)
+            Dim row = New With {.Name = "", .Type = "", .Filename = "",
+                .Version = "", .ModifiedDate = "", .Folder = ""}
 
-                      If value.Contains("""") Then
-                          value = value.Replace("""", """""")
-                      End If
+            row.Name = pack.Name
+            row.Type = pack.GetTypeName
+            row.Filename = pack.Filename
+            row.Folder = pack.Directory
 
-                      If value.Contains(";") OrElse value.Contains("""") Then
-                          value = """" + value + """"
-                      End If
-
-                      Return value
-                  End Function
-
-        For Each pair In Package.Items.OrderBy(Function(val) val.Value.Path)
-            Dim row As New List(Of String)
-            Dim pack = pair.Value
-            Dim path = pack.Path
-
-            'Name
-            row.Add(add(pack.Name))
-
-            'Type
-            If Not pack.HelpSwitch Is Nothing Then
-                row.Add("Console App")
-            ElseIf pack.IsGUI Then
-                row.Add("GUI App")
-            ElseIf TypeOf pack Is PluginPackage Then
-                Dim plugin = DirectCast(pack, PluginPackage)
-
-                If Not plugin.AvsFilterNames.NothingOrEmpty Then
-                    If plugin.Filename.Ext = "dll" Then
-                        row.Add("AviSynth Plugin")
-                    ElseIf plugin.Filename.Ext.EqualsAny("avs", "avsi") Then
-                        row.Add("AviSynth Script")
-                    Else
-                        Throw New Exception()
-                    End If
-                ElseIf Not plugin.VSFilterNames.NothingOrEmpty Then
-                    If plugin.Filename.Ext = "dll" Then
-                        row.Add("VapourSynth Plugin")
-                    ElseIf plugin.Filename.Ext = "py" Then
-                        row.Add("VapourSynth Script")
-                    Else
-                        row.Add("")
-                    End If
-                Else
-                    row.Add("")
-                End If
-            ElseIf pack.Filename.Ext = "dll" Then
-                row.Add("Library")
-            Else
-                row.Add("Misc")
+            If pack.IsVersionCorrect Then
+                row.Version = "'" + pack.Version + "'"
             End If
 
-            'Filename
-            row.Add(add(pack.Filename))
-
-            'Version
-            If pack.IsCorrectVersion Then
-                row.Add(add("'" + pack.Version + "'"))
-            Else
-                row.Add("")
+            If File.Exists(pack.Path) Then
+                row.ModifiedDate = File.GetLastWriteTime(pack.Path).ToString("yyyy-MM-dd")
             End If
-
-            'Modified Date
-            If File.Exists(path) Then
-                row.Add(File.GetLastWriteTime(path).ToShortDateString())
-            Else
-                row.Add("")
-            End If
-
-            'Folder
-            row.Add(add(pack.Directory))
 
             rows.Add(row)
         Next
 
-        Dim text As String
+        Using td As New TaskDialog(Of String)
+            td.MainInstruction = "Choose how to show"
+            td.AddCommand("Show as CSV file", "csv")
+            td.AddCommand("Show using PowerShell", "ogv")
 
-        For Each rowList In rows
-            text += String.Join(";", rowList) + BR
-        Next
-
-        Dim csvFile = Folder.Temp + "staxrip tools.csv"
-        text.WriteFileUtf8(csvFile)
-        g.StartProcess(g.GetAppPathForExtension("csv", "txt"), csvFile.Escape)
+            Select Case td.Show
+                Case "csv"
+                    Dim csvFile = Folder.Temp + "staxrip tools.csv"
+                    g.ConvertToCSV(";", rows).WriteFileUTF8(csvFile)
+                    g.ShellExecute(g.GetAppPathForExtension("csv", "txt"), csvFile.Escape)
+                Case "ogv"
+                    g.InvokePowerShellCode($"$objects | Out-GridView", "objects", rows)
+            End Select
+        End Using
     End Sub
 
-    Private Sub miStatus_Click(sender As Object, e As EventArgs) Handles miStatus.Click
+    Sub miStatus_Click(sender As Object, e As EventArgs) Handles miStatus.Click
         Dim txt As String
 
         For Each pair In Package.Items
@@ -692,9 +671,162 @@ Public Class AppsForm
         Next
 
         If txt = "" Then
-            MsgInfo("Status of all tools required by the current project is OK.")
+            MsgInfo("OK!")
         Else
             MsgInfo(txt)
         End If
     End Sub
+
+    Sub miBrowsePath_Click(sender As Object, e As EventArgs) Handles miBrowsePath.Click
+        Using dialog As New OpenFileDialog
+            dialog.SetInitDir(s.Storage.GetString(CurrentPackage.Name + "custom path"))
+            dialog.Filter = "|" + CurrentPackage.Filename + "|All Files|*.*"
+
+            If dialog.ShowDialog = DialogResult.OK Then
+                If Not s.AllowCustomPathsInStartupFolder AndAlso
+                    dialog.FileName.ToLowerEx.StartsWithEx(Folder.Startup.ToLowerEx) AndAlso
+                    Not dialog.FileName.ToLowerEx.StartsWithEx(Folder.Settings.ToLowerEx) Then
+
+                    MsgError("Custom paths within the startup folder are not permitted.")
+                    Exit Sub
+                End If
+
+                s.Storage.SetString(CurrentPackage.Name + "custom path", dialog.FileName)
+                ShowActivePackage()
+            End If
+        End Using
+    End Sub
+
+    Sub miClearCustomPath_Click(sender As Object, e As EventArgs) Handles miClearCustomPath.Click
+        Dim packs = Package.Items.Values.Where(Function(pack) pack.GetStoredPath() <> "")
+
+        If packs.Count > 0 Then
+            Using td As New TaskDialog(Of Package)
+                td.MainInstruction = "Choose a path to be cleared."
+
+                For Each pack In packs
+                    td.AddCommand(pack.Name, pack.GetStoredPath, pack)
+                Next
+
+                If Not td.Show Is Nothing Then
+                    td.SelectedValue.SetStoredPath(Nothing)
+                    ShowActivePackage()
+                End If
+            End Using
+        Else
+            MsgInfo("No custom paths defined.")
+        End If
+    End Sub
+
+    Sub miSearchUsingEverything_Click(sender As Object, e As EventArgs) Handles miSearchUsingEverything.Click
+        Everything()
+    End Sub
+
+    Async Sub Everything()
+        Dim paths As New List(Of String)
+
+        Dim run = Sub()
+                      Dim size = 500
+                      Dim sb As New StringBuilder(size)
+
+                      Try
+                          Everything_SetSearch(CurrentPackage.Filename)
+                          Everything_SetRequestFlags(EVERYTHING_REQUEST_FILE_NAME Or EVERYTHING_REQUEST_PATH)
+                          Everything_Query(True)
+
+                          For x = 0 To Everything_GetNumResults() - 1
+                              Everything_GetResultFullPathName(CUInt(x), sb, CUInt(size))
+                              Dim path = sb.ToString
+
+                              If path.FileName.ToLower = CurrentPackage.Filename.ToLower Then
+                                  paths.Add(path)
+                              End If
+
+                              If paths.Count > 5 Then
+                                  Exit For
+                              End If
+                          Next
+                      Catch
+                          g.ShellExecute("https://www.voidtools.com")
+                      End Try
+                  End Sub
+
+        Await Task.Run(run)
+
+        If Disposing OrElse IsDisposed Then
+            Exit Sub
+        End If
+
+        If paths.Count > 0 Then
+            Using form As New SimpleSettingsForm("Choose Path")
+                form.ScaleClientSize(35, 20)
+                form.bnOK.Visible = False
+                form.bnCancel.Visible = False
+                form.LineControl.Visible = False
+                form.HelpButton = False
+                form.Height = CInt(form.FontHeight * 3.6 * paths.Count + form.FontHeight * 2.5)
+
+                Dim ui = form.SimpleUI
+
+                For Each path In paths
+                    Dim bn = ui.AddButton
+                    bn.Button.Text = path
+                    bn.Button.Expand = True
+                    bn.Button.TextAlign = ContentAlignment.MiddleLeft
+                    bn.Button.Height = CInt(form.FontHeight * 3)
+                    bn.Button.Padding = New Padding(form.FontHeight \ 3)
+                    AddHandler bn.Button.Click, Sub(sender As Object, e As EventArgs)
+                                                    Dim fp = DirectCast(sender, Button).Text
+
+                                                    If Not s.AllowCustomPathsInStartupFolder AndAlso
+                                                        fp.ToLowerEx.StartsWithEx(Folder.Startup.ToLowerEx) AndAlso
+                                                        Not fp.ToLowerEx.StartsWithEx(Folder.Settings.ToLowerEx) Then
+
+                                                        MsgError("Custom paths within the startup folder are not permitted.")
+                                                        Exit Sub
+                                                    End If
+
+                                                    CurrentPackage.SetStoredPath(fp)
+                                                    ShowActivePackage()
+                                                    form.Close()
+                                                End Sub
+                Next
+
+                form.ShowDialog()
+            End Using
+        Else
+            MsgInfo("Nothing found.")
+        End If
+    End Sub
+
+    Const EVERYTHING_REQUEST_FILE_NAME As Integer = 1
+    Const EVERYTHING_REQUEST_PATH As Integer = 2
+
+    <DllImport("Everything.dll", CharSet:=CharSet.Unicode)>
+    Public Shared Function Everything_SetSearch(lpSearchString As String) As Integer
+    End Function
+
+    <DllImport("Everything.dll")>
+    Shared Sub Everything_SetRequestFlags(dwRequestFlags As UInt32)
+    End Sub
+
+    <DllImport("Everything.dll")>
+    Shared Sub Everything_SetSort(dwSortType As UInt32)
+    End Sub
+
+    <DllImport("Everything.dll", CharSet:=CharSet.Unicode)>
+    Public Shared Function Everything_Query(bWait As Boolean) As Boolean
+    End Function
+
+    <DllImport("Everything.dll", CharSet:=CharSet.Unicode)>
+    Shared Sub Everything_GetResultFullPathName(nIndex As UInt32, lpString As StringBuilder, nMaxCount As UInt32)
+    End Sub
+
+    <DllImport("Everything.dll")>
+    Public Shared Function Everything_GetResultSize(nIndex As UInt32, ByRef lpFileSize As Long) As Boolean
+    End Function
+
+    <DllImport("Everything.dll")>
+    Public Shared Function Everything_GetNumResults() As UInt32
+    End Function
 End Class

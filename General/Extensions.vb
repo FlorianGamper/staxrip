@@ -6,13 +6,95 @@ Imports System.Runtime.CompilerServices
 Imports System.Security.Cryptography
 Imports System.Text
 Imports System.Text.RegularExpressions
+
 Imports Microsoft.Win32
 Imports VB6 = Microsoft.VisualBasic
 
 Module StringExtensions
+    Private Separator As Char = Path.DirectorySeparatorChar
+
     <Extension>
-    Public Function Multiply(instance As String, multiplier As Integer) As String
-        If multiplier < 1 Then multiplier = 1
+    Function TrimTrailingSeparator(instance As String) As String
+        If instance = "" Then
+            Return ""
+        End If
+
+        If instance.EndsWith(Separator) AndAlso Not instance.Length <= 3 Then
+            Return instance.TrimEnd(Separator)
+        End If
+
+        Return instance
+    End Function
+
+    <Extension()>
+    Function Parent(path As String) As String
+        If path = "" Then
+            Return ""
+        End If
+
+        Dim temp = TrimTrailingSeparator(path)
+
+        If temp.Contains(Separator) Then
+            path = temp.LeftLast(Separator) + Separator
+        End If
+
+        Return path
+    End Function
+
+    <Extension>
+    Function IndentLines(instance As String, value As String) As String
+        If instance = "" Then
+            Return ""
+        End If
+
+        instance = value + instance
+        instance = instance.Replace(BR, BR + value)
+        Return instance
+    End Function
+
+    <Extension>
+    Function StartsWithEx(instance As String, value As String) As Boolean
+        If instance <> "" AndAlso value <> "" Then
+            Return instance.StartsWith(value)
+        End If
+    End Function
+
+    <Extension>
+    Function EndsWithEx(instance As String, value As String) As Boolean
+        If instance <> "" AndAlso value <> "" Then
+            Return instance.EndsWith(value)
+        End If
+    End Function
+
+    <Extension>
+    Function ContainsEx(instance As String, value As String) As Boolean
+        If instance <> "" AndAlso value <> "" Then
+            Return instance.Contains(value)
+        End If
+    End Function
+
+    <Extension>
+    Function ToLowerEx(instance As String) As String
+        If instance = "" Then
+            Return ""
+        End If
+
+        Return instance.ToLower
+    End Function
+
+    <Extension>
+    Sub ThrowIfContainsNewLine(instance As String)
+        If instance?.Contains(BR) Then
+            Throw New Exception("String contains a line break char: " + instance)
+        End If
+    End Sub
+
+    <Extension>
+    Function Multiply(instance As String, multiplier As Integer) As String
+        If multiplier < 1 Then
+            multiplier = 1
+        End If
+
         Dim sb As New StringBuilder(multiplier * instance.Length)
 
         For i = 0 To multiplier - 1
@@ -24,7 +106,10 @@ Module StringExtensions
 
     <Extension>
     Function IsValidFileName(instance As String) As Boolean
-        If instance = "" Then Return False
+        If instance = "" Then
+            Return False
+        End If
+
         Dim chars = """*/:<>?\|"
 
         For Each i In instance
@@ -106,11 +191,6 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function Parent(instance As String) As String
-        Return DirPath.GetParent(instance)
-    End Function
-
-    <Extension()>
     Function ExistingParent(instance As String) As String
         Dim ret = instance.Parent
         If Not Directory.Exists(ret) Then ret = ret.Parent Else Return ret
@@ -119,11 +199,6 @@ Module StringExtensions
         If Not Directory.Exists(ret) Then ret = ret.Parent Else Return ret
         If Not Directory.Exists(ret) Then ret = ret.Parent Else Return ret
         Return ret
-    End Function
-
-    <Extension()>
-    Function Ext(instance As String) As String
-        Return FilePath.GetExt(instance)
     End Function
 
     <Extension()>
@@ -137,28 +212,91 @@ Module StringExtensions
     End Function
 
     <Extension()>
+    Function Ext(instance As String) As String
+        Return GetExt(instance, False)
+    End Function
+
+    <Extension()>
     Function ExtFull(instance As String) As String
-        Return FilePath.GetExtFull(instance)
+        Return GetExt(instance, True)
+    End Function
+
+    Function GetExt(filepath As String, includeDot As Boolean) As String
+        If filepath = "" Then
+            Return ""
+        End If
+
+        Dim chars = filepath.ToCharArray()
+
+        For x = filepath.Length - 1 To 0 Step -1
+            If chars(x) = Separator Then
+                Return ""
+            End If
+
+            If chars(x) = "."c Then
+                Return filepath.Substring(x + If(includeDot, 0, 1)).ToLower()
+            End If
+        Next
+
+        Return ""
     End Function
 
     <Extension()>
     Function Base(instance As String) As String
-        Return FilePath.GetBase(instance)
+        If instance = "" Then
+            Return ""
+        End If
+
+        Dim ret = instance
+
+        If ret.Contains(Separator) Then
+            ret = ret.RightLast(Separator)
+        End If
+
+        If ret.Contains(".") Then
+            ret = ret.LeftLast(".")
+        End If
+
+        Return ret
     End Function
 
     <Extension()>
     Function Dir(instance As String) As String
-        Return FilePath.GetDir(instance)
+        If instance = "" Then
+            Return ""
+        End If
+
+        If instance.Contains("\") Then
+            instance = instance.LeftLast("\") + "\"
+        End If
+
+        Return instance
+    End Function
+
+    <Extension()>
+    Function DirNoSep(instance As String) As String
+        instance = instance.Dir
+
+        If instance.EndsWith(Separator) Then
+            instance = instance.TrimTrailingSeparator
+        End If
+
+        Return instance
     End Function
 
     <Extension()>
     Function DirName(instance As String) As String
-        Return DirPath.GetName(instance)
+        If instance = "" Then
+            Return ""
+        End If
+
+        instance = TrimTrailingSeparator(instance)
+        Return instance.RightLast(Separator)
     End Function
 
     <Extension()>
-    Function DirAndBase(instance As String) As String
-        Return FilePath.GetDirAndBase(instance)
+    Function DirAndBase(path As String) As String
+        Return path.Dir + path.Base
     End Function
 
     <Extension()>
@@ -168,7 +306,9 @@ Module StringExtensions
 
     <Extension()>
     Function ContainsAny(instance As String, ParamArray any As String()) As Boolean
-        If instance <> "" Then Return any.Any(Function(arg) instance.Contains(arg))
+        If instance <> "" Then
+            Return any.Any(Function(arg) instance.Contains(arg))
+        End If
     End Function
 
     <Extension()>
@@ -183,15 +323,15 @@ Module StringExtensions
             Return ""
         End If
 
-        While instance.Contains(DirPath.Separator + DirPath.Separator)
-            instance = instance.Replace(DirPath.Separator + DirPath.Separator, DirPath.Separator)
+        While instance.EndsWith(Separator + Separator)
+            instance = instance.Substring(0, instance.Length - 1)
         End While
 
-        If instance.EndsWith(DirPath.Separator) Then
+        If instance.EndsWith(Separator) Then
             Return instance
         End If
 
-        Return instance + DirPath.Separator
+        Return instance + Separator
     End Function
 
     <Extension()>
@@ -199,15 +339,6 @@ Module StringExtensions
         value = value.Replace(VB6.ChrW(13) + VB6.ChrW(10), VB6.ChrW(10))
         value = value.Replace(VB6.ChrW(13), VB6.ChrW(10))
         Return value.Replace(VB6.ChrW(10), VB6.ChrW(13) + VB6.ChrW(10))
-    End Function
-
-    <Extension()>
-    Function ContainsUnicode(value As String) As Boolean
-        If value = "" Then Return False
-
-        For Each i In value
-            If Convert.ToInt32(i) > 255 Then Return True
-        Next
     End Function
 
     <Extension()>
@@ -315,12 +446,20 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function ReadAllText(instance As String) As String 'auto detects encoding
+    Function ReadAllText(instance As String) As String
+        If Not File.Exists(instance) Then
+            Return ""
+        End If
+
         Return File.ReadAllText(instance)
     End Function
 
     <Extension()>
-    Function ReadAllTextDefault(instance As String) As String 'auto detects encoding
+    Function ReadAllTextDefault(instance As String) As String
+        If Not File.Exists(instance) Then
+            Return ""
+        End If
+
         Return File.ReadAllText(instance, Encoding.Default)
     End Function
 
@@ -330,14 +469,19 @@ Module StringExtensions
     End Sub
 
     <Extension()>
-    Sub WriteFileUtf8(instance As String, path As String)
-        WriteFile(instance, path, Encoding.UTF8) 'adds BOM
+    Sub WriteFileUTF8(instance As String, path As String)
+        WriteFile(instance, path, New UTF8Encoding(False))
     End Sub
 
     <Extension()>
-    Sub WriteFile(value As String, path As String, encoding As Encoding)
+    Sub WriteFileUTF8BOM(instance As String, path As String)
+        WriteFile(instance, path, New UTF8Encoding(True))
+    End Sub
+
+    <Extension()>
+    Sub WriteFile(instance As String, path As String, encoding As Encoding)
         Try
-            File.WriteAllText(path, value, encoding)
+            File.WriteAllText(path, instance, encoding)
         Catch ex As Exception
             g.ShowException(ex)
         End Try
@@ -345,42 +489,68 @@ Module StringExtensions
 
     <Extension()>
     Function Left(value As String, index As Integer) As String
-        If value = "" OrElse index < 0 Then Return ""
-        If index > value.Length Then Return value
+        If value = "" OrElse index < 0 Then
+            Return ""
+        End If
+
+        If index > value.Length Then
+            Return value
+        End If
+
         Return value.Substring(0, index)
     End Function
 
     <Extension()>
     Function Left(value As String, start As String) As String
-        If value = "" OrElse start = "" Then Return ""
-        If Not value.Contains(start) Then Return ""
+        If value = "" OrElse start = "" Then
+            Return ""
+        End If
+
+        If Not value.Contains(start) Then
+            Return ""
+        End If
+
         Return value.Substring(0, value.IndexOf(start))
     End Function
 
     <Extension()>
     Function LeftLast(value As String, start As String) As String
-        If Not value.Contains(start) Then Return ""
+        If Not value.Contains(start) Then
+            Return ""
+        End If
+
         Return value.Substring(0, value.LastIndexOf(start))
     End Function
 
     <Extension()>
     Function Right(value As String, start As String) As String
-        If value = "" OrElse start = "" Then Return ""
-        If Not value.Contains(start) Then Return ""
+        If value = "" OrElse start = "" Then
+            Return ""
+        End If
+
+        If Not value.Contains(start) Then
+            Return ""
+        End If
+
         Return value.Substring(value.IndexOf(start) + start.Length)
     End Function
 
     <Extension()>
     Function RightLast(value As String, start As String) As String
-        If value = "" OrElse start = "" Then Return ""
-        If Not value.Contains(start) Then Return ""
+        If value = "" OrElse start = "" Then
+            Return ""
+        End If
+
+        If Not value.Contains(start) Then
+            Return ""
+        End If
+
         Return value.Substring(value.LastIndexOf(start) + start.Length)
     End Function
 
     <Extension()>
-    Function EqualIgnoreCase(a As String, b As String) As Boolean
-        If a = "" OrElse b = "" Then Return False
-        Return String.Compare(a, b, StringComparison.OrdinalIgnoreCase) = 0
+    Function IsEqualIgnoreCase(value1 As String, value2 As String) As Boolean
+        Return String.Compare(value1, value2, StringComparison.OrdinalIgnoreCase) = 0
     End Function
 
     <Extension()>
@@ -393,11 +563,37 @@ Module StringExtensions
     End Function
 
     <Extension()>
+    Function IsValidFileSystemName(instance As String) As Boolean
+        If instance = "" Then
+            Return False
+        End If
+
+        Dim chars = """*/:<>?\|^".ToCharArray
+
+        For Each i In instance.ToCharArray
+            If chars.Contains(i) Then
+                Return False
+            End If
+
+            If Convert.ToInt32(i) < 32 Then
+                Return False
+            End If
+        Next
+
+        Return True
+    End Function
+
+    <Extension()>
+    Function IsSameBase(instance As String, b As String) As Boolean
+        Return instance.Base.IsEqualIgnoreCase(b.Base)
+    End Function
+
+    <Extension()>
     Function EscapeIllegalFileSysChars(value As String) As String
         If value = "" Then Return ""
 
         For Each i In value
-            If Not FilePath.IsValidFileSystemName(i) Then
+            If Not IsValidFileSystemName(i) Then
                 value = value.Replace(i, "__" + Uri.EscapeDataString(i).TrimStart("%"c) + "__")
             End If
         Next
@@ -454,9 +650,9 @@ Module StringExtensions
     Function RemoveChars(value As String, chars As String) As String
         Dim ret = value
 
-        For Each i In value
-            If chars.IndexOf(i) >= 0 Then
-                ret = ret.Replace(i, "")
+        For Each ch In value
+            If chars.Contains(ch) Then
+                ret = ret.Replace(ch, "")
             End If
         Next
 
@@ -466,15 +662,6 @@ Module StringExtensions
     <Extension()>
     Function DeleteRight(value As String, count As Integer) As String
         Return Left(value, value.Length - count)
-    End Function
-
-    <Extension()>
-    Function ReplaceUnicode(value As String) As String
-        If value.Contains(Convert.ToChar(&H2212)) Then
-            value = value.Replace(Convert.ToChar(&H2212), "-"c)
-        End If
-
-        Return value
     End Function
 
     <Extension()>
@@ -491,16 +678,12 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function SHA512Hash(value As String) As String
-        Dim crypt = SHA512CryptoServiceProvider.Create()
-        Dim hash = crypt.ComputeHash(ASCIIEncoding.ASCII.GetBytes(value))
-        Dim sb As New StringBuilder()
-
-        For Each i In hash
-            sb.Append(i.ToString("x2"))
-        Next
-
-        Return sb.ToString()
+    Function MD5Hash(instance As String) As String
+        Using m = MD5.Create()
+            Dim inputBuffer = Encoding.UTF8.GetBytes(instance)
+            Dim hashBuffer = m.ComputeHash(inputBuffer)
+            Return BitConverter.ToString(m.ComputeHash(inputBuffer))
+        End Using
     End Function
 
     <Extension()>
@@ -523,12 +706,20 @@ End Module
 Module MiscExtensions
     <Extension()>
     Function ToInvariantString(instance As IConvertible) As String
-        If instance Is Nothing Then Return ""
+        If instance Is Nothing Then
+            Return ""
+        End If
+
         Return instance.ToString(CultureInfo.InvariantCulture)
     End Function
 
     <Extension()>
     Function ContainsAny(Of T)(instance As IEnumerable(Of T), ParamArray values As T()) As Boolean
+        Return instance.Where(Function(arg) values.Contains(arg)).Count > 0
+    End Function
+
+    <Extension()>
+    Function ContainsAny(Of T)(instance As IEnumerable(Of T), values As IEnumerable(Of T)) As Boolean
         Return instance.Where(Function(arg) values.Contains(arg)).Count > 0
     End Function
 
@@ -544,7 +735,10 @@ Module MiscExtensions
                   delimiter As String,
                   Optional removeEmpty As Boolean = False) As String
 
-        If instance Is Nothing Then Return Nothing
+        If instance Is Nothing Then
+            Return Nothing
+        End If
+
         Dim containsEmpty As Boolean
 
         For Each item In instance
@@ -554,7 +748,10 @@ Module MiscExtensions
             End If
         Next
 
-        If containsEmpty AndAlso removeEmpty Then instance = instance.Where(Function(arg) arg <> "")
+        If containsEmpty AndAlso removeEmpty Then
+            instance = instance.Where(Function(arg) arg <> "")
+        End If
+
         Return String.Join(delimiter, instance)
     End Function
 
@@ -613,7 +810,7 @@ Module MiscExtensions
 End Module
 
 Module RegistryKeyExtensions
-    Private Function GetValue(Of T)(rootKey As RegistryKey, subKeyName As String, valueName As String) As T
+    Function GetValue(Of T)(rootKey As RegistryKey, subKeyName As String, valueName As String) As T
         Using subKey = rootKey.OpenSubKey(subKeyName)
             If Not subKey Is Nothing Then
                 Dim value = subKey.GetValue(valueName)
@@ -702,7 +899,10 @@ Module ControlExtension
         For x = 4 To 2 Step -1
             ret = values.Join("".PadRight(x))
             Dim testWidth = TextRenderer.MeasureText(ret, instance.Font).Width
-            If testWidth < instance.Width - 2 OrElse x = 2 Then Return ret
+
+            If testWidth < instance.Width Then
+                Return ret
+            End If
         Next
 
         Return ret
@@ -753,8 +953,13 @@ Module UIExtensions
 
     <Extension()>
     Sub SetSelectedPath(d As FolderBrowserDialog, path As String)
-        If Not Directory.Exists(path) Then path = path.ExistingParent
-        If Directory.Exists(path) Then d.SelectedPath = path
+        If Not Directory.Exists(path) Then
+            path = path.ExistingParent
+        End If
+
+        If Directory.Exists(path) Then
+            d.SelectedPath = path
+        End If
     End Sub
 
     <Extension()>

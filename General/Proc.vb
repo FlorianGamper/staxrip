@@ -1,8 +1,8 @@
 
-Imports System.Text.RegularExpressions
-Imports System.Text
 Imports System.ComponentModel
 Imports System.Runtime.InteropServices
+Imports System.Text
+Imports System.Text.RegularExpressions
 
 Public Class Proc
     Implements IDisposable
@@ -16,20 +16,24 @@ Public Class Proc
     Property BeginOutputReadLine As Boolean
     Property SkipString As String
     Property SkipStrings As String()
-    Property SkipPatterns As String()
     Property TrimChars As Char()
-    Property RemoveChars As Char()
     Property ExitCode As Integer
-    Property Frames As Integer
+    Property FrameCount As Integer
     Property Duration As TimeSpan
     Property Log As New LogBuilder
     Property Succeeded As Boolean
     Property Header As String
     Property Package As Package
+    Property OutputReader As AsyncStreamReader
+    Property ErrorReader As AsyncStreamReader
+    Property IntegerFrameOutput As Boolean
+    Property IntegerPercentOutput As Boolean
 
     Private LogItems As List(Of String)
 
     Event ProcDisposed()
+    Event OutputDataReceived(value As String)
+    Event ErrorDataReceived(value As String)
 
     Sub New(Optional readOutput As Boolean = True)
         Me.ReadOutput = readOutput
@@ -59,7 +63,10 @@ Public Class Proc
 
     Property Project As Project
         Get
-            If ProjectValue Is Nothing Then ProjectValue = p
+            If ProjectValue Is Nothing Then
+                ProjectValue = p
+            End If
+
             Return ProjectValue
         End Get
         Set(value As Project)
@@ -76,77 +83,70 @@ Public Class Proc
             Return Process.StartInfo.WorkingDirectory
         End Get
         Set(Value As String)
-            If Directory.Exists(Value) Then Process.StartInfo.WorkingDirectory = Value
+            If Directory.Exists(Value) Then
+                Process.StartInfo.WorkingDirectory = Value
+            End If
         End Set
     End Property
 
     ReadOnly Property Title As String
         Get
-            If Not Package Is Nothing Then Return Package.Name
+            If Not Package Is Nothing Then
+                Return Package.Name
+            End If
+
             Dim header = ""
-            If Me.Header <> "" Then header = Me.Header.ToLower
+
+            If Me.Header <> "" Then
+                header = Me.Header.ToLower
+            End If
+
             Dim ret = ""
 
             For Each i In Package.Items.Values
-                If header?.Contains(i.Name.ToLower) OrElse Arguments?.Contains(i.Filename) Then ret += " | " + i.Name
+                If header?.Contains(i.Name.ToLower) OrElse Arguments?.Contains(i.Filename) Then
+                    ret += " | " + i.Name
+                End If
             Next
 
-            If ret = "" Then ret = File.Base
+            If ret = "" Then
+                ret = File.Base
+            End If
+
             Return ret.TrimStart(" |".ToCharArray)
         End Get
     End Property
 
-    Shared Sub ExecuteBatch(batchCode As String,
-                            header As String,
-                            suffix As String,
-                            skipStrings As String())
+    Shared Function GetSkipStrings(commands As String) As String()
+        commands = commands.ToLower
 
-        If batchCode.Contains(BR) Then
-            Dim batchPath = p.TempDir + p.TargetFile.Base + suffix + ".bat"
-            batchCode = WriteBatchFile(batchPath, batchCode)
-
-            Using proc As New Proc
-                proc.Header = header
-                proc.SkipStrings = skipStrings
-                proc.WriteLog(batchCode + BR2)
-                proc.File = "cmd.exe"
-                proc.Arguments = "/C call """ + batchPath + """"
-
-                Try
-                    proc.Start()
-                Catch ex As AbortException
-                    Throw ex
-                Catch ex As Exception
-                    g.ShowException(ex)
-                    Throw New AbortException
-                End Try
-            End Using
+        If commands.Contains("xvid_encraw") Then
+            Return {"key=", "frames("}
+        ElseIf commands.Contains("x264") OrElse commands.Contains("x265") Then
+            Return {"%]"}
+        ElseIf commands.Contains("nvenc") Then
+            Return {"frames: "}
+        ElseIf commands.Contains("qaac") Then
+            Return {", ETA ", "x)"}
+        ElseIf commands.Contains("fdkaac") Then
+            Return {"%]", "x)"}
+        ElseIf commands.Contains("eac3to") Then
+            Return {"process: ", "analyze: "}
+        ElseIf commands.Contains("ffmpeg") Then
+            Return {"frame=", "size="}
         Else
-            Using proc As New Proc
-                proc.Header = header
-                proc.SkipStrings = skipStrings
-                proc.File = "cmd.exe"
-                proc.Arguments = "/S /C """ + batchCode + """"
-
-                Try
-                    proc.Start()
-                Catch ex As AbortException
-                    Throw ex
-                Catch ex As Exception
-                    g.ShowException(ex)
-                    Throw New AbortException
-                End Try
-            End Using
+            Return {" [ETA ", ", eta ", "frames: ", "Maximum Gain Found",
+                "transcoding ...", "process: ", "analyze: "}
         End If
-    End Sub
+    End Function
 
+    'TODO: should probably be removed
     Shared Function WriteBatchFile(path As String, content As String) As String
         If OSVersion.Current = OSVersion.Windows7 Then
             For Each i In content
                 If Convert.ToInt32(i) > 137 Then
                     Throw New ErrorAbortException("Unsupported Windows Version",
-                                                  "Executing batch files with character '" & i &
-                                                  "' requires minimum Windows 8.")
+                        "Executing batch files with character '" & i & "' requires minimum Windows 8.")
                 End If
             Next
         End If
@@ -218,7 +218,10 @@ Public Class Proc
     End Property
 
     Sub WriteLog(value As String)
-        If LogItems Is Nothing Then LogItems = New List(Of String)
+        If LogItems Is Nothing Then
+            LogItems = New List(Of String)
+        End If
+
         LogItems.Add(value)
     End Sub
 
@@ -229,8 +232,13 @@ Public Class Proc
             If Not Process.HasExited Then
                 If Process.ProcessName = "cmd" Then
                     For Each i In ProcessHelp.GetChilds(Process)
-                        If {"conhost", "vspipe", "avs2pipemod64"}.Contains(i.ProcessName) Then Continue For
-                        If Not i.HasExited Then i.Kill()
+                        If {"conhost", "vspipe", "avs2pipemod64"}.Contains(i.ProcessName) Then
+                            Continue For
+                        End If
+
+                        If Not i.HasExited Then
+                            i.Kill()
+                        End If
                     Next
                 Else
                     Process.Kill()
@@ -240,25 +248,40 @@ Public Class Proc
         End Try
     End Sub
 
+    Sub OutputReadNotifyUser(value As String)
+        RaiseEvent OutputDataReceived(value)
+    End Sub
+
+    Sub ErrorReadNotifyUser(value As String)
+        RaiseEvent ErrorDataReceived(value)
+    End Sub
+
     Sub Start()
-        If ProcController.Aborted Then Throw New AbortException
+        If ProcController.Aborted Then
+            Throw New AbortException
+        End If
 
         Try
             If Header <> "" Then
-                If Not Package Is Nothing Then Header += " using " + Package.Name + " " + Package.Version
                 Log.WriteHeader(Header)
+
+                If Not Package Is Nothing Then
+                    Log.WriteLine(Package.Name + " " + Package.Version + BR2)
+                End If
             End If
 
-            If Process.StartInfo.FileName = "" Then Process.StartInfo.FileName = Package.Path
+            If Process.StartInfo.FileName = "" Then
+                Process.StartInfo.FileName = Package.Path
+            End If
 
             If ReadOutput Then
-                ProcController.Start(Me)
-
-                If File = "cmd.exe" AndAlso Arguments?.StartsWith("/S /C """) AndAlso Arguments?.EndsWith("""") Then
+                If File = "cmd.exe" AndAlso Arguments.StartsWithEx("/S /C """) AndAlso Arguments.EndsWithEx("""") Then
                     Log.WriteLine(Arguments.Substring(7, Arguments.Length - 8) + BR2)
                 Else
                     Log.WriteLine(CommandLine + BR2)
                 End If
+
+                ProcController.Start(Me)
             End If
 
             If Not LogItems Is Nothing Then
@@ -267,18 +290,36 @@ Public Class Proc
                 Next
             End If
 
+            SetEnvironmentVariables(Process)
             Process.Start()
 
             If ReadOutput Then
-                Process.BeginOutputReadLine()
-                Process.BeginErrorReadLine()
+                OutputReader = New AsyncStreamReader(
+                    Process.StandardOutput.BaseStream,
+                    AddressOf OutputReadNotifyUser,
+                    Process.StandardOutput.CurrentEncoding)
+
+                ErrorReader = New AsyncStreamReader(
+                    Process.StandardError.BaseStream,
+                    AddressOf ErrorReadNotifyUser,
+                    Process.StandardError.CurrentEncoding)
+
+                OutputReader.BeginReadLine()
+                ErrorReader.BeginReadLine()
             End If
         Catch ex As AbortException
             Throw ex
         Catch ex As Exception
             Dim msg = ex.Message
-            If File <> "" Then msg += BR2 + "File: " + File
-            If Arguments <> "" Then msg += BR2 + "Arguments: " + Arguments
+
+            If File <> "" Then
+                msg += BR2 + "File: " + File
+            End If
+
+            If Arguments <> "" Then
+                msg += BR2 + "Arguments: " + Arguments
+            End If
+
             MsgError(msg)
         End Try
 
@@ -289,6 +330,9 @@ Public Class Proc
 
             If Wait Then
                 Process.WaitForExit()
+                OutputReader?.WaitUtilEOF()
+                ErrorReader?.WaitUtilEOF()
+
                 ExitCode = Process.ExitCode
 
                 If Abort Then
@@ -311,7 +355,7 @@ Public Class Proc
                         End Try
                     End If
 
-                    Dim errorMessage = Header + " failed with exit code: " & ExitCode &
+                    Dim errorMessage = Header + " returned error exit code: " & ExitCode &
                         " (" + "0x" + ExitCode.ToString("X") + ")"
 
                     If interpretation <> "" Then
@@ -350,7 +394,10 @@ Public Class Proc
                     Project.Log.Save(Project)
                 End If
 
-                If Not Process Is Nothing Then Process.Dispose()
+                Process?.Dispose()
+                OutputReader?.Dispose()
+                ErrorReader?.Dispose()
+
                 RaiseEvent ProcDisposed()
             End If
         End If
@@ -363,31 +410,62 @@ Public Class Proc
         GC.SuppressFinalize(Me)
     End Sub
 
+    Shared Sub SetEnvironmentVariables(process As Process)
+        If process.StartInfo.UseShellExecute Then
+            Exit Sub
+        End If
+
+        Dim dic = process.StartInfo.EnvironmentVariables
+        Dim keys = dic.Keys.OfType(Of String).Select(Function(key) key.ToLower)
+
+        For Each mac In Macro.GetMacros(False, False, False)
+            Dim name = mac.Name.Trim("%"c)
+
+            If Not keys.Contains(name) Then
+                dic(name) = Macro.Expand(mac.Name)
+            End If
+        Next
+
+        Dim path = dic("Path")
+
+        For Each pack In Package.Items.Values
+            If pack.Path.Ext = "exe" AndAlso pack.HelpSwitch IsNot Nothing AndAlso pack.Path.FileExists Then
+                path = pack.Directory + ";" + path
+            End If
+        Next
+
+        dic("path") = path
+    End Sub
+
     Function ProcessData(value As String) As (Data As String, Skip As Boolean)
-        If value = "" Then Return ("", False)
-
-        If Not RemoveChars Is Nothing Then
-            For Each i In RemoveChars
-                If value.Contains(i) Then value = value.Replace(i, "")
-            Next
+        If value = "" Then
+            Return ("", False)
         End If
 
-        If Not TrimChars Is Nothing Then value = value.Trim(TrimChars)
+        If Not TrimChars Is Nothing Then
+            value = value.Trim(TrimChars)
+        End If
 
-        If SkipString <> "" Then
-            If value.Contains(SkipString) Then Return (value, True)
-        ElseIf Not SkipStrings Is Nothing Then
+        If SkipString <> "" AndAlso value.Contains(SkipString) Then
+            Return (value, True)
+        End If
+
+        If Not SkipStrings Is Nothing Then
             For Each i In SkipStrings
-                If value.Contains(i) Then Return (value, True)
+                If value.Contains(i) Then
+                    Return (value, True)
+                End If
             Next
         End If
 
-        If Not SkipPatterns Is Nothing Then
-            For Each i In SkipPatterns
-                If Regex.IsMatch(value, i) Then Return (value, True)
-            Next
+        If IntegerFrameOutput AndAlso value.Trim.IsInt Then
+            Return (value.Trim, True)
         End If
 
-        Return (value.Trim, False)
+        If IntegerPercentOutput AndAlso value.IsInt Then
+            Return (value, True)
+        End If
+
+        Return (value, False)
     End Function
 End Class

@@ -160,8 +160,10 @@ Public Class VideoScript
     End Function
 
     Function GetFilter(category As String) As VideoFilter
-        For Each i In Filters
-            If i.Category = category Then Return i
+        For Each filter In Filters
+            If filter.Category = category Then
+                Return filter
+            End If
         Next
     End Function
 
@@ -172,43 +174,46 @@ Public Class VideoScript
                     Optional comparePath As Boolean = True,
                     Optional flipVertical As Boolean = False)
 
-        If Path <> "" Then
-            Dim srcFilter = GetFilter("Source")
+        If Path = "" Then
+            Exit Sub
+        End If
 
-            If Not srcFilter Is Nothing AndAlso Not srcFilter.Script.Contains("(") Then
-                Exit Sub
-            End If
+        Dim srcFilter = GetFilter("Source")
 
-            Dim code = Macro.Expand(GetScript())
+        If Not srcFilter Is Nothing AndAlso Not srcFilter.Script.Contains("(") Then
+            Exit Sub
+        End If
 
-            If convertToRGB Then
-                If Engine = ScriptEngine.AviSynth Then
-                    If p.SourceHeight > 576 Then
-                        code += BR + "ConvertBits(8)" + BR + "ConvertToRGB32(matrix=""Rec709"")"
-                    Else
-                        code += BR + "ConvertBits(8)" + BR + "ConvertToRGB32(matrix=""Rec601"")"
-                    End If
+        Dim code = Macro.Expand(GetScript())
 
-                    If flipVertical Then
-                        code += BR + "FlipVertical()"
-                    End If
+        If convertToRGB Then
+            If Engine = ScriptEngine.AviSynth Then
+                If p.SourceHeight > 576 Then
+                    code += BR + "ConvertBits(8)" + BR + "ConvertToRGB32(matrix=""Rec709"")"
                 Else
-                    code = code.Trim
+                    code += BR + "ConvertBits(8)" + BR + "ConvertToRGB32(matrix=""Rec601"")"
+                End If
 
-                    If Not code.Contains(".set_output(") Then
-                        code += BR + "clip.set_output()"
-                    End If
+                If flipVertical Then
+                    code += BR + "FlipVertical()"
+                End If
+            Else
+                code = code.Trim
 
-                    Dim match = Regex.Match(code, "(\w+)\.set_output\(\)")
-                    Dim clipname = match.Groups(1).Value
+                If Not code.Contains(".set_output(") Then
+                    code += BR + "clip.set_output()"
+                End If
 
-                    Dim vsCode = ""
+                Dim match = Regex.Match(code, "(\w+)\.set_output\(\)")
+                Dim clipname = match.Groups(1).Value
 
-                    If flipVertical Then
-                        vsCode += BR + "clipname = core.std.FlipVertical(clipname)" + BR
-                    End If
+                Dim vsCode = ""
 
-                    vsCode += "
+                If flipVertical Then
+                    vsCode += BR + "clipname = core.std.FlipVertical(clipname)" + BR
+                End If
+
+                vsCode += "
 if clipname.format.id == vs.RGB24:
     _matrix_in_s = 'rgb'
 else:
@@ -220,48 +225,49 @@ else:
 clipname = clipname.resize.Bicubic(matrix_in_s = _matrix_in_s, format = vs.COMPATBGR32)
 clipname.set_output()
 "
-                    vsCode = vsCode.Replace("clipname", clipname)
-                    code = code.Replace(match.Value, vsCode).Trim
-                End If
+                vsCode = vsCode.Replace("clipname", clipname)
+                code = code.Replace(match.Value, vsCode).Trim
             End If
+        End If
 
-            If Me.Error <> "" OrElse code <> LastCode OrElse (comparePath AndAlso Path <> LastPath) Then
-                If Directory.Exists(FilePath.GetDir(Path)) Then
-                    If Engine = ScriptEngine.VapourSynth Then
-                        ModifyScript(code, Engine).WriteFile(Path, Encoding.UTF8)
-                    Else
-                        ModifyScript(code, Engine).WriteFileDefault(Path)
-                    End If
+        If Me.Error <> "" OrElse code <> LastCode OrElse (comparePath AndAlso Path <> LastPath) Then
+            If Path.Dir.DirExists Then
+                If Engine = ScriptEngine.VapourSynth Then
+                    ModifyScript(code, Engine).WriteFile(Path, Encoding.UTF8)
+                Else
+                    ModifyScript(code, Engine).WriteFileDefault(Path)
+                End If
 
-                    If p.SourceFile <> "" Then
-                        g.MainForm.Indexing()
-                    End If
-
-                    If Not Package.AviSynth.VerifyOK OrElse
+                If Not Package.AviSynth.VerifyOK OrElse
                         Not Package.VapourSynth.VerifyOK OrElse
                         Not Package.vspipe.VerifyOK Then
 
-                        Throw New AbortException
+                    Throw New AbortException
+                End If
+
+                g.MainForm.Indexing()
+
+                Using server As New FrameServer(Path)
+                    Info = server.Info
+
+                    If Not convertToRGB Then
+                        OriginalInfo = Info
                     End If
 
-                    Using server As New FrameServer(Path)
-                        Info = server.Info
+                    Me.Error = server.Error
+                End Using
 
-                        If Not convertToRGB Then
-                            OriginalInfo = Info
-                        End If
-
-                        Me.Error = server.Error
-                    End Using
-
-                    LastCode = code
-                    LastPath = Path
-                End If
+                LastCode = code
+                LastPath = Path
             End If
         End If
     End Sub
 
     Shared Function ModifyScript(script As String, engine As ScriptEngine) As String
+        If p.SourceFile.Ext.EqualsAny("avs", "vpy") Then
+            Return script
+        End If
+
         If engine = ScriptEngine.VapourSynth Then
             Return ModifyVSScript(script)
         Else
@@ -355,7 +361,7 @@ clipname.set_output()
 
                     line = "core.avs.LoadPlugin(r""" + plugin.Path + """)" + BR
                 Else
-                    line = "core.std.LoadPlugin(r""" + plugin.Path + """)" + BR
+                    line = "core.std.LoadPlugin(r""" + plugin.Path + """, altsearchpath=True)" + BR
                 End If
 
                 code += line
@@ -364,6 +370,7 @@ clipname.set_output()
     End Sub
 
     Shared Function GetAVSLoadCode(script As String, scriptAlready As String) As String
+        Dim scriptLower = script.ToLower
         Dim loadCode = ""
         Dim plugins = Package.Items.Values.OfType(Of PluginPackage)()
 
@@ -373,20 +380,20 @@ clipname.set_output()
             If fp <> "" Then
                 If Not plugin.AvsFilterNames Is Nothing Then
                     For Each filterName In plugin.AvsFilterNames
-                        If script.Contains(filterName.ToLower) Then
+                        If scriptLower.Contains(filterName.ToLower) Then
                             If plugin.Filename.Ext = "dll" Then
                                 Dim load = "LoadPlugin(""" + fp + """)" + BR
 
                                 If File.Exists(Folder.Plugins + fp.FileName) AndAlso
-                                        File.GetLastWriteTimeUtc(Folder.Plugins + fp.FileName) <
-                                        File.GetLastWriteTimeUtc(fp) Then
+                                    File.GetLastWriteTimeUtc(Folder.Plugins + fp.FileName) <
+                                    File.GetLastWriteTimeUtc(fp) Then
 
                                     MsgWarn("Conflict with outdated plugin", $"An outdated version of {plugin.Name} is located in your auto load folder. StaxRip includes a newer version.{BR2 + Folder.Plugins + fp.FileName}", True)
                                 End If
 
-                                If Not script.Contains(load.ToLower) AndAlso
-                                    Not loadCode.Contains(load) AndAlso
-                                    Not scriptAlready.Contains(load.ToLower) Then
+                                If Not scriptLower.Contains(load.ToLower) AndAlso
+                                    Not loadCode.ToLower.Contains(load.ToLower) AndAlso
+                                    Not scriptAlready.ToLower.Contains(load.ToLower) Then
 
                                     loadCode += load
                                 End If
@@ -394,7 +401,7 @@ clipname.set_output()
                             ElseIf plugin.Filename.Ext = "avsi" Then
                                 Dim avsiImport = "Import(""" + fp + """)" + BR
 
-                                If Not script.Contains(avsiImport.ToLower) AndAlso
+                                If Not scriptLower.Contains(avsiImport.ToLower) AndAlso
                                     Not loadCode.Contains(avsiImport) AndAlso
                                     Not scriptAlready.Contains(avsiImport.ToLower) Then
 
@@ -406,10 +413,12 @@ clipname.set_output()
                 End If
             End If
         Next
+
         Return loadCode
     End Function
 
     Shared Function GetAVSLoadCodeFromImports(code As String) As String
+        code = code.ToLower
         Dim ret = ""
 
         For Each line In code.SplitLinesNoEmpty
@@ -417,7 +426,7 @@ clipname.set_output()
                 Dim match = Regex.Match(line, "\bimport\s*\(\s*""\s*(.+\.avsi*)\s*""\s*\)", RegexOptions.IgnoreCase)
 
                 If match.Success AndAlso File.Exists(match.Groups(1).Value) Then
-                    ret += GetAVSLoadCode(match.Groups(1).Value.ReadAllText.ToLowerInvariant, code)
+                    ret += GetAVSLoadCode(match.Groups(1).Value.ReadAllText, code)
                 End If
             End If
         Next
@@ -427,16 +436,20 @@ clipname.set_output()
 
     Shared Function ModifyAVSScript(script As String) As String
         Dim clip As String
-        Dim lowerScript = script.ToLower
-        Dim loadCode = GetAVSLoadCode(lowerScript, "")
+        Dim loadCode = GetAVSLoadCode(script, "")
         clip = loadCode + script
-        clip = GetAVSLoadCodeFromImports(clip.ToLowerInvariant) + clip
+        clip = GetAVSLoadCodeFromImports(clip) +clip
         Return clip
     End Function
 
     Function GetFramerate() As Double
         Dim info = GetInfo()
         Dim ret = info.FrameRateNum / info.FrameRateDen
+        Return If(Calc.IsValidFrameRate(ret), ret, 25)
+    End Function
+
+    Function GetCachedFrameRate() As Double
+        Dim ret = Info.FrameRateNum / Info.FrameRateDen
         Return If(Calc.IsValidFrameRate(ret), ret, 25)
     End Function
 
@@ -687,7 +700,7 @@ Public Class FilterCategory
         Dim color As New FilterCategory("Color")
         color.Filters.Add(New VideoFilter(color.Name, "Convert | Format", "z_ConvertFormat(pixel_type=""$enter_text:Enter The Format You Wish To Convert To$"", colorspace_op=""$select:msg:Select Color Matrix Input;RGB;FCC;YCGCO;240m;709;2020ncl$:$select:msg:Select Color Transfer Input;Linear;Log100;Log316;470m;470bg;240m;XVYCC;SRGB;709;2020;st2084$:$select:msg:Select Color Primaries Input;470m;470bg;FILM;709;2020$:l=>$select:msg:Select Color Matrix output;RGB;FCC;YCGCO;240m;709;2020ncl$:$select:msg:Select Color Transfer Output;Linear;Log100;Log316;470m;470bg;240m;XVYCC;SRGB;709;2020;st2084$:$select:msg:Select Color Primaries Output;470m;470bg;FILM;709;2020$:l"", dither_type=""$select:msg:Select Dither Type;None;ordered$"")"))
         color.Filters.Add(New VideoFilter(color.Name, "ColorYUV | AutoAdjust", "AutoAdjust(gamma_limit=1.0, scd_threshold=16, gain_mode=1, auto_gain=$select:msg:Enable Auto Gain?;true;false$, auto_balance=$select:msg:Enable Auto Balance?;true;false$, Input_tv=$select:msg:Is the Input using TV Range?;true;false$, output_tv=$select:msg:Do you want to use TV Range for Output?;true;false$, use_dither=$select:msg:Use Dither?;true;false$, high_quality=$select:msg:Use High Quality Mode?;true;false$, high_bitdepth=$select:msg:Use High Bit Depth Mode?;true;false$, threads_count=$enter_text:How Many Threads do You Wish to use?$)"))
-        color.Filters.Add(New VideoFilter(color.Name, "ColorYUV | Levels", "$select:TV to PC|Levels(16, 1, 235, 0, 255, coring=false);PC to TV|Levels(0, 1, 255, 16, 235, coring=false)$"))
+        color.Filters.Add(New VideoFilter(color.Name, "ColorYUV | Levels", "$select:TV to PC|ColorYUV(levels=""TV->PC"");PC to TV|ColorYUV(levels=""PC->TV"")$"))
         color.Filters.Add(New VideoFilter(color.Name, "ColorYUV | Stack", "$select:To Stack|ConvertToStacked();From Stacked|ConvertFromStacked()$"))
         color.Filters.Add(New VideoFilter(color.Name, "Convert | ConvertTo", "ConvertTo$enter_text:Enter The Format You Wish To Convert To$()"))
         color.Filters.Add(New VideoFilter(color.Name, "Convert | ConvertBits", "ConvertBits($select:msg:Select the Bit Depth You want to Convert To;8;10;12;14;16;32$)"))
@@ -727,6 +740,7 @@ Public Class FilterCategory
         misc.Filters.Add(New VideoFilter(misc.Name, "Histogram", "Histogram(""levels"", bits=$select:msg:Select BitDepth;8;10;12$)"))
         misc.Filters.Add(New VideoFilter(misc.Name, "SplitVertical", "Splitvertical=true"))
         misc.Filters.Add(New VideoFilter(misc.Name, "AddBorders", "AddBorders(0,0,0,0) #left,top,right,bottom"))
+        misc.Filters.Add(New VideoFilter(misc.Name, "SelectRangeEvery", "SelectRangeEvery(1500,50)"))
 
         ret.Add(misc)
 
@@ -786,9 +800,9 @@ Public Class FilterCategory
         color.Filters.Add(New VideoFilter(color.Name, "ColorSpace | Transfer", "clip = core.fmtc.transfer(clip, transs='$select:msg:Select Input;Linear;470m;470bg;240m;SRGB;709;2020;2084$', transd='$select:msg:Select Output;Linear;470m;470bg;240m;SRGB;709;2020;2084$')"))
         color.Filters.Add(New VideoFilter(color.Name, "ColorSpace | Range", "$select:msg:Select Range;PC to TV|clip = core.fmtc.bitdepth(clip, fulls=True, fulld=False);TV to PC|clip = core.fmtc.bitdepth (clip, fulls=False, fulld=True)$"))
         color.Filters.Add(New VideoFilter(color.Name, "Convert | Tweak", "clip = adjust.Tweak(clip, sat=0.75, hue=115-138)"))
-        color.Filters.Add(New VideoFilter(color.Name, "Convert | BitDepth", "clip = core.fmtc.bitdepth(clip, bits=$select:msg:Select BitDepth;8;10;12;16;32$)"))
+        color.Filters.Add(New VideoFilter(color.Name, "Convert | BitDepth (fmtc)", "clip = core.fmtc.bitdepth(clip, bits=$select:msg:Select BitDepth;8;10;12;16;32$)"))
         color.Filters.Add(New VideoFilter(color.Name, "Convert | Format", "clip = core.avs.z_ConvertFormat(clip, pixel_type='$enter_text:Enter The Format You Wish To Convert To$',colorspace_op='$select:msg:Select Color Matrix Input;RGB;240m;709;2020ncl$:$select:msg:Select Color Transfer Input;Linear;470m;470bg;240m;SRGB;709;2020;st2084$:$select:msg:Select Color Primaries Input;470m;470bg;FILM;709;2020$:l=>$select:msg:Select Color Matrix output;RGB;FCC;YCGCO;240m;709;2020ncl$:$select:msg:Select Color Transfer Output;Linear;Log100;Log316;470m;470bg;240m;XVYCC;SRGB;709;2020;st2084$:$select:msg:Select Color Primaries Output;470m;470bg;FILM;709;2020$:l', dither_type='$select:msg:Select Dither Type;None;ordered$')"))
-        color.Filters.Add(New VideoFilter(color.Name, "Convert | Convert To", "clip = core.resize.Bicubic(clip, format=vs.$enter_text:Enter The Format You Wish To Convert To$)")) ''Ex: resize.Bicubic( format=vs.YUV444P8)        
+        color.Filters.Add(New VideoFilter(color.Name, "Convert | Convert To", "clip = core.resize.Bicubic(clip, format=vs.$select:COMPATBGR32;COMPATYUY2;GRAY16;GRAY8;GRAYH;GRAYS;RGB24;RGB27;RGB30;RGB48;RGBH;RGBS;YUV410P8;YUV411P8;YUV420P8;YUV420P9;YUV420P10;YUV420P12;YUV420P14;YUV420P16;YUV422P8;YUV422P9;YUV422P10;YUV422P12;YUV422P14;YUV422P16;YUV440P8;YUV444P8;YUV444P9;YUV444P10;YUV444P12;YUV444P14;YUV444P16;YUV444PH;YUV444PS$)"))
         color.Filters.Add(New VideoFilter(color.Name, "Convert | To 444", "clip = core.fmtc.resample(clip, css='444')"))
         ret.Add(color)
 
@@ -828,7 +842,7 @@ Public Class FilterCategory
         ret.Add(misc)
 
         Dim resize As New FilterCategory("Resize")
-        resize.Filters.Add(New VideoFilter(resize.Name, "Resize...", "clip = $select:Bilinear|core.resize.Bilinear;Bicubic|core.resize.Bicubic;Point|core.resize.Point;Lanczos|core.resize.Lanczos;Spline16|core.resize.Spline16;Spline36|core.resize.Spline36;Dither_Resize16|Dither.Resize16nr;Resample|core.fmtc.resample$(clip, %target_width%, %target_height%)"))
+        resize.Filters.Add(New VideoFilter(resize.Name, "Resize...", "clip = $select:Bilinear|core.resize.Bilinear;Bicubic|core.resize.Bicubic;Point|core.resize.Point;Lanczos|core.resize.Lanczos;Spline16|core.resize.Spline16;Spline36|core.resize.Spline36;Spline64|core.resize.Spline64;Dither_Resize16|Dither.Resize16nr;Resample|core.fmtc.resample$(clip, %target_width%, %target_height%)"))
         ret.Add(resize)
 
         Dim crop As New FilterCategory("Crop")
@@ -909,21 +923,6 @@ Public Class FilterParameters
                                    ret.Parameters.Add(New FilterParameter(param, value))
                                Next
                            End Sub
-
-                add({"DGSource"}, "Hardware Resizing", {
-                    New FilterParameter("resize_w", "%target_width%"),
-                    New FilterParameter("resize_h", "%target_height%")})
-
-                add({"DGSource"}, "Hardware Cropping", {
-                    New FilterParameter("crop_l", "%crop_left%"),
-                    New FilterParameter("crop_t", "%crop_top%"),
-                    New FilterParameter("crop_r", "%crop_right%"),
-                    New FilterParameter("crop_b", "%crop_bottom%")})
-
-                add2({"DGSource"}, "deinterlace", "0", "deinterlace | 0 (no deinterlacing)")
-                add2({"DGSource"}, "deinterlace", "1", "deinterlace | 1 (single rate deinterlacing)")
-                add2({"DGSource"}, "deinterlace", "2", "deinterlace | 2 (double rate deinterlacing)")
-                add2({"DGSource"}, "fulldepth", "true", "fulldepth = true")
 
                 add({"FFVideoSource",
                      "LWLibavVideoSource",

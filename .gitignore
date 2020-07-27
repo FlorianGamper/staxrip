@@ -11,3 +11,5 @@
 /FrameServer/.vs
 /FrameServer/FrameServer.vcxproj.user
 /StaxRip.sln.DotSettings.user
+/docs/_build
+/Tools/AutoCrop/obj

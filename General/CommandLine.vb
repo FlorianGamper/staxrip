@@ -1,4 +1,6 @@
-﻿Imports StaxRip.UI
+﻿
+Imports System.Text
+Imports StaxRip.UI
 
 Namespace CommandLine
     Public MustInherit Class CommandLineParams
@@ -8,9 +10,10 @@ Namespace CommandLine
         Event ValueChanged(item As CommandLineParam)
         MustOverride ReadOnly Property Items As List(Of CommandLineParam)
 
-        MustOverride Function GetCommandLine(includePaths As Boolean,
-                                             includeExecutable As Boolean,
-                                             Optional pass As Integer = 1) As String
+        MustOverride Function GetCommandLine(
+            includePaths As Boolean,
+            includeExecutable As Boolean,
+            Optional pass As Integer = 1) As String
 
         MustOverride Function GetPackage() As Package
 
@@ -50,7 +53,9 @@ Namespace CommandLine
 
         Protected Overridable Sub OnValueChanged(item As CommandLineParam)
             For Each i In Items
-                If Not i.VisibleFunc Is Nothing Then i.Visible = i.Visible
+                If Not i.VisibleFunc Is Nothing Then
+                    i.Visible = i.Visible
+                End If
             Next
 
             RaiseEvent ValueChanged(item)
@@ -71,11 +76,13 @@ Namespace CommandLine
         End Function
 
         Sub Execute()
-            Dim batchProc As New Process
-            batchProc.StartInfo.FileName = "cmd.exe"
-            batchProc.StartInfo.Arguments = "/k """ + GetCommandLine(True, True) + """"
-            batchProc.StartInfo.WorkingDirectory = p.TempDir
-            batchProc.Start()
+            If g.IsWindowsTerminalAvailable Then
+                Dim cl = "cmd.exe /S /K --% """ + GetCommandLine(True, True) + """"
+                Dim base64 = Convert.ToBase64String(Encoding.Unicode.GetBytes(cl)) 'UTF16LE
+                g.Execute("wt.exe", "powershell.exe -NoLogo -NoExit -NoProfile -EncodedCommand """ + base64 + """")
+            Else
+                g.Execute("cmd.exe", "/S /K """ + GetCommandLine(True, True) + """")
+            End If
         End Sub
     End Class
 
@@ -83,18 +90,18 @@ Namespace CommandLine
         Property AlwaysOn As Boolean
         Property ArgsFunc As Func(Of String)
         Property Help As String
+        Property HelpSwitch As String
+        Property ImportAction As Action(Of String, String)
+        Property Label As String
         Property LeftMargin As Double
         Property Name As String
         Property NoSwitch As String
         Property Path As String
         Property Switch As String
-        Property HelpSwitch As String
-        Property Label As String
         Property Switches As IEnumerable(Of String)
         Property Text As String
         Property URLs As List(Of String)
         Property VisibleFunc As Func(Of Boolean)
-        Property ImportAction As Action(Of String, String)
 
         Friend Store As PrimitiveStore
         Friend Params As CommandLineParams
@@ -114,7 +121,9 @@ Namespace CommandLine
 
             If Not Switches.NothingOrEmpty Then
                 For Each i In Switches
-                    If i <> "" Then ret.Add(i)
+                    If i <> "" Then
+                        ret.Add(i)
+                    End If
                 Next
             End If
 
@@ -125,7 +134,10 @@ Namespace CommandLine
 
         Property Visible As Boolean
             Get
-                If Not VisibleFunc Is Nothing Then Return VisibleFunc.Invoke
+                If Not VisibleFunc Is Nothing Then
+                    Return VisibleFunc.Invoke
+                End If
+
                 Return VisibleValue
             End Get
             Set(value As Boolean)
@@ -135,7 +147,10 @@ Namespace CommandLine
                     Dim c = GetControl()
 
                     If Not c Is Nothing Then
-                        If TypeOf c.Parent Is SimpleUI.EmptyBlock Then c = c.Parent
+                        If TypeOf c.Parent Is SimpleUI.EmptyBlock Then
+                            c = c.Parent
+                        End If
+
                         c.Visible = value
                     End If
                 End If
@@ -143,16 +158,19 @@ Namespace CommandLine
         End Property
 
         Function GetKey() As String
-            If Name <> "" Then Return Name
-            If Switch <> "" Then Return Switch
-
-            If Text <> "" Then
-                If Text.StartsWith(" ") AndAlso HelpSwitch <> "" Then
-                    Return Text + HelpSwitch
-                Else
-                    Return Text
-                End If
+            If Name <> "" Then
+                Return Name
             End If
+
+            If Switch <> "" Then
+                Return Switch
+            End If
+
+            If HelpSwitch <> "" Then
+                Return Text + HelpSwitch
+            End If
+
+            Return Text
         End Function
     End Class
 
@@ -223,8 +241,14 @@ Namespace CommandLine
             End Get
             Set(value As Boolean)
                 ValueValue = value
-                If Not Store Is Nothing Then Store.Bool(GetKey) = value
-                If Not CheckBox Is Nothing Then CheckBox.Checked = value
+
+                If Not Store Is Nothing Then
+                    Store.Bool(GetKey) = value
+                End If
+
+                If Not CheckBox Is Nothing Then
+                    CheckBox.Checked = value
+                End If
             End Set
         End Property
 
@@ -250,11 +274,15 @@ Namespace CommandLine
 
         Property Config As Double() 'min, max, step, decimal places
             Get
-                If ConfigValue Is Nothing Then Return {Double.MinValue, Double.MaxValue, 1, 0}
+                If ConfigValue Is Nothing Then
+                    Return {Double.MinValue, Double.MaxValue, 1, 0}
+                End If
+
                 Return ConfigValue
             End Get
             Set(value As Double())
                 ConfigValue = {value(0), value(1), 1, 0}
+
                 If value.Length > 2 Then ConfigValue(2) = value(2)
                 If value.Length > 3 Then ConfigValue(3) = value(3)
 
