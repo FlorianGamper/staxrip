@@ -4891,10 +4891,9 @@ Public Class MainForm
                             batchProject.SourceFiles = {i}.ToList
                             Dim jobPath = batchFolder + i.Dir.Replace("\", "-").Replace(":", "-") + " " + p.TemplateName + " - " + i.FileName
                             If (s.IsFileNameLengthRestricted And jobPath.Length > s.MaxBatchFileNameLength) Then
-                                Dim shortenedFileName = jobPath.GetHashCode().ToString() + "-" + i.FileName()
-                                If (shortenedFileName.Length > s.MaxBatchFileNameLength) Then
-                                    shortenedFileName = shortenedFileName.Substring(0, s.MaxBatchFileNameLength)
-                                End If
+                                Dim hash = jobPath.GetHashCode().ToString()
+                                Dim shortenedFileName As String = Microsoft.VisualBasic.Strings.Right(i.FileName, s.MaxBatchFileNameLength - (hash.Length + 1))
+                                shortenedFileName = hash + "-" + shortenedFileName
                                 jobPath = batchFolder + shortenedFileName
                             End If
                             SafeSerialization.Serialize(batchProject, jobPath)

@@ -1,6 +1,7 @@
 
 Imports System.Text
 Imports System.Text.RegularExpressions
+Imports System.Threading
 
 Imports VB6 = Microsoft.VisualBasic
 
@@ -239,6 +240,24 @@ Public Class eac3toDemuxer
             Return True
         End Get
     End Property
+End Class
+
+Public Class DebugHelper
+    Public Shared Sub BreakOnFileAccess(fpath As String)
+        Dim msg = Path.GetFullPath(fpath)
+        msg = "The Process cannont access the file '" + msg
+
+        Dim fs = File.Open(fpath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)
+        Dim t As New Thread(
+            Sub()
+                While (True)
+                    Thread.Sleep(Timeout.Infinite)
+                    GC.KeepAlive(fs)
+                End While
+            End Sub
+            )
+        t.Start()
+    End Sub
 End Class
 
 <Serializable>
