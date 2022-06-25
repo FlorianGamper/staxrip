@@ -3682,24 +3682,6 @@ Public Class MainForm
             b.Field = NameOf(s.MinimizeToTray)
 
             b = ui.AddBool
-            b.Text = "Enable GPU Plugins"
-            b.Field = NameOf(s.IsGPUEnabled)
-
-            b = ui.AddBool
-            b.Text = "Scroll Log Always to the Bottom"
-            b.Field = NameOf(s.IsLogScrollToBottom)
-
-            Dim fileNameHandling = ui.CreateFlowPage("FileName Handling", True)
-
-            b = ui.AddBool
-            b.Text = "Restrict File Name Length (ex. ecrypt.fs)"
-            b.Field = NameOf(s.IsFileNameLengthRestricted)
-
-            n = ui.AddNum
-            n.Text = "Max Filename Length"
-            n.Field = NameOf(s.MaxBatchFileNameLength)
-
-            b = ui.AddBool
             b.Text = "Extend error messages with the help of 'Err'"
             b.Field = NameOf(s.ErrorMessageExtendedByErr)
 
@@ -3715,6 +3697,24 @@ Public Class MainForm
             b.Text = "Prefer Windows Terminal over Powershell if present"
             b.Field = NameOf(s.PreferWindowsTerminal)
 
+            '############# XXX FlpAdd
+            Dim fileNameHandling = ui.CreateFlowPage("Flo Additions", True)
+
+            b = ui.AddBool
+            b.Text = "Enable GPU Plugins"
+            b.Field = NameOf(s.IsGPUEnabled)
+
+            b = ui.AddBool
+            b.Text = "Scroll Log Always to the Bottom"
+            b.Field = NameOf(s.IsLogScrollToBottom)
+
+            b = ui.AddBool
+            b.Text = "Restrict File Name Length (ex. ecrypt.fs)"
+            b.Field = NameOf(s.IsFileNameLengthRestricted)
+
+            n = ui.AddNum
+            n.Text = "Max Filename Length"
+            n.Field = NameOf(s.MaxBatchFileNameLength)
 
             '############# Video
             Dim videoPage = ui.CreateFlowPage("Video")

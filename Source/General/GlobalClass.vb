@@ -453,22 +453,117 @@ Public Class GlobalClass
             File.Exists(p.VideoEncoder.OutputPath))
     End Function
 
+
     Sub DeleteTempFiles()
         If s.DeleteTempFilesMode <> DeleteMode.Disabled AndAlso p.TempDir.EndsWith("_temp\") Then
             Try
                 Dim moreJobsToProcessInTempDir = JobManager.GetJobs.Where(Function(a) a.Active AndAlso a.Path.Contains(p.TempDir))
 
                 If moreJobsToProcessInTempDir.Count = 0 Then
-                    If s.DeleteTempFilesMode = DeleteMode.RecycleBin Then
-                        FolderHelp.Delete(p.TempDir, RecycleOption.SendToRecycleBin)
-                    Else
-                        FolderHelp.Delete(p.TempDir)
-                    End If
+                    REM Delay the delete so the next file can unlock the demuxed video
+                    DelayedPathDeleter.Delete(p.TempDir, s.DeleteTempFilesMode)
+                    REM **
+                    REM If s.DeleteTempFilesMode = DeleteMode.RecycleBin Then
+                    REM FolderHelp.Delete(p.TempDir, RecycleOption.SendToRecycleBin)
+                    REM Else
+                    REM FolderHelp.Delete(p.TempDir)
+                    REM End If
                 End If
             Catch
             End Try
         End If
     End Sub
+
+    REM on VMWare Machines in Batch mode the loaded file is locked until the next file is demuxed indexed and started, this parallelizes the delete of the finished 
+    REM delete so that it's done when the next file starts
+    REM TODO Implement Dispose when app closes and path not deleted yet
+    Private Class DelayedPathDeleter
+
+        Private _isDeleted As Boolean = False
+        Private ReadOnly _tempDir As String
+        Private ReadOnly _delMode As DeleteMode
+
+        Public Shared Sub Delete(tempDir As String, delMode As DeleteMode)
+            Dim del = New DelayedPathDeleter(tempDir, delMode)
+            del.Run()
+        End Sub
+
+        Private Sub New(tempDir As String, delMode As DeleteMode)
+            _tempDir = tempDir
+            _delMode = delMode
+        End Sub
+
+        Private Sub Run()
+            Dim runThread = New Thread(Sub() WaitThenDelete())
+            runThread.IsBackground = True
+            runThread.Start()
+        End Sub
+
+        Private Sub WaitThenDelete()
+            Delete()
+            While (Not _isDeleted)
+                Thread.Sleep(30 * 1000)
+                Delete()
+            End While
+        End Sub
+
+        Private Sub Delete()
+            Try
+                If _delMode = DeleteMode.RecycleBin Then
+                    FolderHelp.Delete(_tempDir, RecycleOption.SendToRecycleBin)
+                Else
+                    FolderHelp.Delete(_tempDir)
+                End If
+                _isDeleted = True
+            Catch
+            End Try
+        End Sub
+    End Class
+    Private Class DelayedPathDeleter2
+
+        Private _isDeleted As Boolean = False
+        Private ReadOnly _tempDir As String
+        Private ReadOnly _delMode As DeleteMode
+        Private Shared ReadOnly Deleter As List(Of DelayedPathDeleter2) = New List(Of DelayedPathDeleter2)
+        Private _thread As Thread
+
+        Public Shared Sub Delete(tempDir As String, delMode As DeleteMode)
+            Dim del = New DelayedPathDeleter2(tempDir, delMode)
+            del.Run()
+        End Sub
+
+        Private Sub New(tempDir As String, delMode As DeleteMode)
+            _tempDir = tempDir
+            _delMode = delMode
+        End Sub
+
+        Private Sub Run()
+            Deleter.Add(Me)
+            _thread = New Thread(Sub() WaitThenDelete())
+            _thread.Start()
+        End Sub
+
+        Private Sub WaitThenDelete()
+            Delete()
+            While (Not _isDeleted)
+                Thread.Sleep(30 * 1000)
+                Delete()
+            End While
+        End Sub
+
+        Private Sub Delete()
+            Try
+                If _delMode = DeleteMode.RecycleBin Then
+                    FolderHelp.Delete(_tempDir, RecycleOption.SendToRecycleBin)
+                Else
+                    FolderHelp.Delete(_tempDir)
+                End If
+                _isDeleted = True
+                Deleter.Remove(Me)
+            Catch
+            End Try
+        End Sub
+    End Class
 
     ReadOnly Property StartupTemplatePath() As String
         Get

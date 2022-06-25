@@ -99,6 +99,7 @@ Public Class ApplicationSettings
     Public X264QualityDefinitions As List(Of x264Control.QualityItem)
     Public X265QualityDefinitions As List(Of x265Control.QualityItem)
 
+    REM XXX FloAdd
     REM Disable GPU
     Public IsGPUEnabled As Boolean = True
 
