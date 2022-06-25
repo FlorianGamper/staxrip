@@ -339,7 +339,7 @@ Public Class Macro
         If value.Contains("%current_time24%") Then value = value.Replace("%current_time24%", Date.Now.ToString("HH-mm-ss"))
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_file_hash%") Then value = value.Replace("%source_file_hash%", proj.SourceFile.MD5Hash())
+        If value.Contains("%source_file_hash%") Then value = value.Replace("%source_file_hash%", proj.SourceFile.GetHashCode().ToString())
         If Not value.Contains("%") Then Return value
 
         If value.Contains("%source_file%") Then value = value.Replace("%source_file%", proj.SourceFile)
@@ -360,7 +360,7 @@ Public Class Macro
         If value.Contains("%target_temp_file%") Then value = value.Replace("%target_temp_file%", proj.TempDir + proj.TargetFile.Base)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_name_hash%") Then value = value.Replace("%source_name_hash%", proj.SourceFile.Base.MD5Hash())
+        If value.Contains("%source_name_hash%") Then value = value.Replace("%source_name_hash%", proj.SourceFile.Base.GetHashCode().ToString())
         If Not value.Contains("%") Then Return value
 
         If value.Contains("%source_name%") Then value = value.Replace("%source_name%", proj.SourceFile.Base)
