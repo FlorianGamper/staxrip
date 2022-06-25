@@ -178,11 +178,13 @@ Public Class Macro
         ret.Add(New Macro("source_dir_parent", "Source Directory Parent", GetType(String), "Parent directory of the source file directory."))
         ret.Add(New Macro("source_ext", "Source File Extension", GetType(String), "File extension of the source file."))
         ret.Add(New Macro("source_file", "Source File Path", GetType(String), "File path of the source video."))
+        ret.Add(New Macro("source_file_hash", "Source File Path Hash", GetType(String), "File path Hash of the source video."))
         ret.Add(New Macro("source_files", "Source Files Blank", GetType(String), "Source files in quotes separated by a blank."))
         ret.Add(New Macro("source_files_comma", "Source Files Comma", GetType(String), "Source files in quotes separated by comma."))
         ret.Add(New Macro("source_framerate", "Source Framerate", GetType(Integer), "Frame rate returned by the source filter AviSynth section."))
         ret.Add(New Macro("source_frames", "Source Frames", GetType(Integer), "Length in frames of the source video."))
         ret.Add(New Macro("source_height", "Source Image Height", GetType(Integer), "Image height of the source video."))
+        ret.Add(New Macro("source_name_hash", "Hash of Source Filename Without Extension", GetType(String), "The hash of the name of the source file without file extension."))
         ret.Add(New Macro("source_name", "Source Filename Without Extension", GetType(String), "The name of the source file without file extension."))
         ret.Add(New Macro("source_par_x", "Source Pixel Aspect Ratio X", GetType(String), "Source pixel/sample aspect ratio."))
         ret.Add(New Macro("source_par_y", "Source Pixel Aspect Ratio Y", GetType(String), "Source pixel/sample aspect ratio."))
@@ -337,6 +339,9 @@ Public Class Macro
         If value.Contains("%current_time24%") Then value = value.Replace("%current_time24%", Date.Now.ToString("HH-mm-ss"))
         If Not value.Contains("%") Then Return value
 
+        If value.Contains("%source_file_hash%") Then value = value.Replace("%source_file_hash%", proj.SourceFile.MD5Hash())
+        If Not value.Contains("%") Then Return value
+
         If value.Contains("%source_file%") Then value = value.Replace("%source_file%", proj.SourceFile)
         If Not value.Contains("%") Then Return value
 
@@ -353,6 +358,9 @@ Public Class Macro
         If Not value.Contains("%") Then Return value
 
         If value.Contains("%target_temp_file%") Then value = value.Replace("%target_temp_file%", proj.TempDir + proj.TargetFile.Base)
+        If Not value.Contains("%") Then Return value
+
+        If value.Contains("%source_name_hash%") Then value = value.Replace("%source_name_hash%", proj.SourceFile.Base.MD5Hash())
         If Not value.Contains("%") Then Return value
 
         If value.Contains("%source_name%") Then value = value.Replace("%source_name%", proj.SourceFile.Base)

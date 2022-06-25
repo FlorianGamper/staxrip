@@ -483,6 +483,15 @@ Public Class GlobalClass
         Private ReadOnly _tempDir As String
         Private ReadOnly _delMode As DeleteMode
 
+        Private Sub WriteLog(text As String)
+            Try
+                Dim time = DateTime.UtcNow.ToString()
+                FileSystem.WriteAllText(_tempDir + Path.DirectorySeparatorChar + "delayedDelete.log", $"{time} : [{Thread.CurrentThread.ManagedThreadId} - {text} {Environment.NewLine}", True, New UTF8Encoding(False))
+            Catch ex As Exception
+                REM g.ShowException(ex)
+            End Try
+        End Sub
+
         Public Shared Sub Delete(tempDir As String, delMode As DeleteMode)
             Dim del = New DelayedPathDeleter(tempDir, delMode)
             del.Run()
@@ -491,15 +500,18 @@ Public Class GlobalClass
         Private Sub New(tempDir As String, delMode As DeleteMode)
             _tempDir = tempDir
             _delMode = delMode
+            WriteLog("DelayedDelete Init")
         End Sub
 
         Private Sub Run()
+            WriteLog("DelayedDelete started")
             Dim runThread = New Thread(Sub() WaitThenDelete())
             runThread.IsBackground = True
             runThread.Start()
         End Sub
 
         Private Sub WaitThenDelete()
+            WriteLog("DelayedDelete loop")
             Delete()
             While (Not _isDeleted)
                 Thread.Sleep(30 * 1000)
@@ -508,6 +520,7 @@ Public Class GlobalClass
         End Sub
 
         Private Sub Delete()
+            WriteLog("Delete executed")
             Try
                 If _delMode = DeleteMode.RecycleBin Then
                     FolderHelp.Delete(_tempDir, RecycleOption.SendToRecycleBin)
@@ -515,7 +528,9 @@ Public Class GlobalClass
                     FolderHelp.Delete(_tempDir)
                 End If
                 _isDeleted = True
-            Catch
+                WriteLog("Delete succeded")
+            Catch ex As Exception
+                WriteLog($"Delete failed : {ex}")
             End Try
         End Sub
     End Class
