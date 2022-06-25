@@ -1,5 +1,925 @@
+not published yet
+=========================
 
-2.1.3.8 Beta (not yet available)
+- New Discord Server Link: https://discord.gg/uz8pVR79Bd, if you haven't joined in yet
+
+
+v2.10.0 (2021-10-06)
+=========================
+
+- New Discord Server Link: https://discord.gg/uz8pVR79Bd, if you haven't joined in yet
+- Remove Extension folder from mpv.net (Dendraspis, [#770](/../../issues/770))
+- ~~Replace obsolete vs.get_core() with vs.core (Dendraspis, [#787](/../../issues/787))~~
+- Updated tools
+  - MediaInfo v21.09
+  - VapourSynth R54 [back due to compatibility issues]
+
+
+v2.9.0 (2021-10-05)
+=========================
+
+- Fix Check for Updates (Dendraspis)
+- Add --thread-affinity to NVEnc (Dendraspis)
+- Add "Warn for invalid Output Mod only if video is cropped" option (Dendraspis)
+- Fix --quant-b-adapt for AOMEnc (Dendraspis, [#785](/../../issues/785))
+- Fix non-synced bitrate between options and main window for AOMEnc (Dendraspis, [#785](/../../issues/785))
+- Updated tools
+  - MKVToolNix v61.0
+  - NVEnc v5.40
+  - Python v3.9.7
+  - QSVEnc v6.03
+  - Subtitle Edit v3.6.2
+  - VapourSynth R56
+  - VCEEnc v6.16
+- Updated filters
+  - JincResize v2.1.0
+  - ffms2 v2.40.1285+13 1c6169a StvG
+  - FFT3D Neo r11
+  - L-SMASH-Works v20210811
+
+
+v2.8.0 (2021-08-01)
+=========================
+
+- Separate checking all and required only apps on AppsForm (Dendraspis)
+- Add more parameters for VCEEnc (Dendraspis, [#757](/../../issues/757))
+- Add --chroma-qp-offset param for NVEnc (Dendraspis)
+- Add --traditional-scenecut param for x265 (Dendraspis)
+- Updated tools
+  - AOMEnc v3.1.2-588-gd1b830121-x64-gcc10.3.0 Patman
+  - ffmpeg-N-103081-gf7958d0883-x64-gcc10.3.0 Patman
+  - MP4Box v1.1.0-DEV-rev1161-g2dfbf0c7a-x64-gcc10.3.0 Patman
+  - NVEnc v5.36
+  - QSVEnc v5.06
+  - Rav1e v0.5.0-alpha-(p20210727)-x64-gcc10.3.0 Patman
+  - SVT-AV1 v0.8.7-31-g6c8c2e18-x64-gcc10.3.0 Patman
+  - VCEEnc v6.13
+  - x264 v0.164.3065+9-7a0e6e8-.Mod-by-Patman.-x64-gcc10.3.0
+  - x265 v3.5+12+14-106329cbd-.Mod-by-Patman.-x64-gcc10.3.0
+- Updated filters
+  - SMDegrain v3.1.2.115s by JKyle
+
+
+v2.7.0 (2021-07-25)
+=========================
+
+- [!!!] Changed names cause all encoder profiles to be reset. This means you have to re-set them by hand or backup and restore them after update.
+- [!!!] Changed (context-)menus from earlier versions must be restored, manually adjusted or need a global settings reset in order to see and use them.
+- Add Assistant option to warn if no audio in output (Dendraspis, [#709](/../../issues/709))
+- Fix --vpp-pad param output for NVEnc and VCEEnc (Dendraspis, [#723](/../../issues/723))
+- Fix crash using "Create job for each selection" (Dendraspis, [#727](/../../issues/727))
+- Fix crash when copy error message of some exceptions (Dendraspis)
+- Add and update SVT-AV1 parameters (Dendraspis, [#731](/../../issues/731))
+- Add option to extract timestamps from all mkv files (Dendraspis)
+- Add Assistant condition for MKV file with timestamps and changed frame rate or count (Dendraspis, [#729](/../../issues/729))
+- Fix *Default* and *Forced* track settings for MP4Box (Dendraspis, [#737](/../../issues/737))
+- Add setting to prefer Windows Terminal over Powershell when present (Dendraspis, [#738](/../../issues/738))
+- Command Line Preview now uses the Code Preview window primarily, but is optional (Dendraspis, [#738](/../../issues/738))
+- Make Main window focus after processing adjustable (Dendraspis, [#333](/../../issues/333))
+- Remove 'SEI writing options'(--opts) from x264 options (deprecated) (Dendraspis, [#748](/../../issues/748))
+- Add "Code Preview" to Remembered Window Positions (Dendraspis)
+- Extend Crop side limits to 80% (Dendraspis)
+- Use MkvExtract to extract timestamps for Command Line Demuxers (Dendraspis)
+- Fix wrong TargetFile after renaming via "After Video Encoded" event (Dendraspis, [#755](/../../issues/755))
+- Fix f3kdb AVS issues (Dendraspis, JKyle, 44vince44)
+- Add AVS SeparateFields filter (44vince44)
+- Add two missing filters to JPSDR (JKyle, [#747](/../../issues/747))
+- Update RgTools URLs, description, and filter list (JKyle, [#720](/../../issues/720))
+- Big filter profile update (JKyle, [#725](/../../issues/725) and more)
+    - Added filters:  
+    AddGrain(VS), AnimeIVTC(AVS), Bifrost(AVS/VS), Bwdif(AVS), Checkmate(AVS), ChubbyRain2(AVS), DeFlicker(AVS), DeJump(AVS), DeRainbow(AVS), DotKill(AVS/VS), ExactDeDup(AVS), FillBorders(AVS/VS), FillDrops(AVS/VS), Fix Horizontal Rainbow(AVS profile), GRunT(AVS plugin), HDRTools(AVS), Letterbox(AVS/VS), NNEDI3_rpow2(AVS/VS), ReduceFlicker(AVS), RT_Stats(AVS plugin), Santiag(AVS), Srestore(AVS plugin), TimecodeFPS(AVS), TIVTC(AVS), VFRToCFR(AVS/VS), vsCnr2(AVS)
+    - Updated filter profiles:  
+    AddBorders(VS), AddGrainC(AVS), Bwdif(VS), ChubbyRain2(AVS), DeRainbow(VS), DirectShowSource(AVS), DSS2(AVS), FFMS2(AVS/VS), FFVideoSource(AVS), KNLMeansCL(AVS/VS), SelectEvery(AVS/VS), SelectRangeEvery(AVS), SeparateFields(VS), TemporalDegrain2(VS), Weave(AVS/VS)
+- Updated tools
+  - AOMEnc v3.1.2-553-g997549cf4-x64-gcc10.3.0 Patman
+  - chapterEditor v1.29
+  - MKVToolNix v59.0
+  - MP4Box v1.1.0-DEV-rev1143-g91d397ddc-x64-gcc10.3.0 Patman
+  - mpv.net v5.4.9.0
+  - NVEnc v5.35
+  - QSVEnc v5.05
+  - Python v3.9.6
+  - Rav1e v0.5.0-alpha-(p20210720-4-g0f25619a)-x64-gcc10.3.0 Patman
+  - SVT-AV1 v0.8.7-30-g3af80294-x64-gcc10.3.0 Patman
+  - VapourSynth R54
+- Updated Filters
+  - AddGrain r8
+  - AvsResize r9 StvG
+  - Bifrost v2.1.0 (AVS) / v2.2 (VS)
+  - Bwdif v1.2.1 (AVS) / r3 (VS)
+  - CASm 2021-05-19
+  - ChubbyRain2 2021-07-20 mod by Asd-g
+  - DeFlicker v0.6
+  - DeJump mod 2021-07-14 by JKyle
+  - DeRainbow 2014-02-23
+  - DotKill v1.0.0 (AVS) / R2 (VS)
+  - ExactDedup v0.0.7Beta
+  - FFT3DFilter v2.9
+  - FillBorders v1.3.0 (AVS) / v2 (VS)
+  - FillDrops mod 2021-07-10 by Selur (AVS) / mod 2021-07-11 by JKyle (VS)
+  - flash3kyuu_deband v2.0.0-1 (Avisynth+ plugins pack r14)
+  - GRunT v1.0.2
+  - JPSDR v3.2.7 W7 AVX2
+  - MvTools2 v2.7.45
+  - Neo F3KDB r7
+  - QTGMC v3.382s
+  - ReduceFlicker v0.1.1
+  - RgTools v1.2
+  - RT_Stats v2.00Beta13
+  - Srestore v2.797
+  - TEMmod v0.2.2
+  - TemporalDegrain2 v2.3.1
+  - TimecodeFPS v1.1.1
+  - VfrToCfr v1.1.1
+  - vsCnr2 v1.0.0
+  - VSFilterMod v5.2.5
+  - Zs_RF_Shared v1.154
+
+
+v2.6.0 (2021-05-22)
+=========================
+
+- [ ] Might break settings from previous version, so starting with new settings is recommended
+- [ ] Might break templates and jobs from previous version, so checking or renewing them is recommended
+- [X] Changed (context-)menus from earlier versions must be restored, manually adjusted or need a global settings reset in order to see and use them
+- Enable Timestamp Extraction for VFR MKV files by default (Dendraspis, 44vince44)
+- Fix timestamp extraction setting being ignored (Dendraspis, 44vince44)
+- Autoload (extracted) timestamps file (Dendraspis)
+- Fix x264 --progress-header param not being shown correctly (Dendraspis, [#696](/../../issues/696))
+- Add Drag'n'Drop to Video Comparison (Dendraspis, [#697](/../../issues/697))
+- Video Comparison loads source file directly and also the target file, if it exists (Dendraspis)
+- Add Jobs window to remembered window positions (Dendraspis)
+- Add x264 --synth-lib param for non-vanilla builds only (Dendraspis, 44vince44, [#711](/../../issues/711))
+- Close all Preview windows when adding a job (Dendraspis, 44vince44)
+- Edit Cutting filter instead of re-creating it (Dendraspis, [#710](/../../issues/710))
+- Add multiple params for VCEEnc (Dendraspis, [#551](/../../issues/551))
+- Add --input-analyze param for NVEnc/VCEEnc (Dendraspis)
+- Refurbish Next button (Dendraspis)
+- Add settings to change modifier key behavior on Next/AddJob button (Dendraspis)
+- Disable 'Err' error messages by default (Dendraspis)
+- Fix MCTemporalDenoise high settings cause error (JKyle, [#690](/../../issues/690))
+- Update various filter profiles for both AVS and VS (JKyle)
+- Add Grayscale filter profiles for AviSynth/VapourSynth (JKyle)
+- AOMEnc v3.1.0-243-g87682566c-x64-gcc10.3.0 Patman
+- AVSMeter v3.0.9.0
+- AVSTP v1.0.4
+- CASm 2021-04-22 by JKyle
+- DAA3Mod v3.63
+- Dither v1.28.1
+- ffmpeg N v102464-gc6ae560a18-x64-gcc10.3.0 Patman
+- FineSharp mod v2020.04.12 HBD
+- FrameRateConverter v1.3
+- HQDering mod v1.8
+- LimitedSharpenFaster v2.193
+- Maa2mod v0.435
+- mClean v3.2 Jmod 4 (2021-05-14)
+- Mp4Box v1.1.0-DEV-rev904-g00a2e202a-x64-gcc10.3.0 Patman
+- NVEnc v5.32
+- Qaac-2.72-x64-msvc1928 Patman
+- QSVEnc v5.02
+- Rav1e v0.5.0-alpha-(p20210518-3-ge1926975)-x64-gcc10.3.0 Patman
+- ResizeX v1.0.1 mod 9.39
+- Subtitle Edit v3.6.1
+- SVT-AV1 v0.8.7-4-g786c4dac-x64-gcc10.3.0 Patman
+- TTempSmooth v0.9.4
+- VCEEnc v6.11
+- vsTTempSmooth v1.1.3
+- x264 v0.163.3059+11-1aa8b82-.Mod-by-Patman.-x64-gcc10.3.0
+
+
+v2.5.0 (2021-05-03)
+=========================
+
+- [ ] Might break settings from previous version, so starting with new settings is recommended
+- [ ] Might break templates and jobs from previous version, so checking or renewing them is recommended
+- [x] Changed (context-)menus from earlier versions must be restored, manually adjusted or need a global settings reset in order to see and use them
+- Add option to disable extraction of forced subtitles for IDX files (Dendraspis, 44vince44)
+- Sort video files before they are opened and processed (Dendraspis)
+- Fix app crash on opening menu between encodes (Dendraspis)
+- Disable file drop in Code Editor (Dendraspis)
+- Fix multiple suspensions on running processes (Dendraspis)
+- Fix and enhance Thumbnailer (Dendraspis)
+- Fix Autocrop showing unrounded progress percentage (Dendraspis, [#659](/../../issues/659))
+- Set subtitle *forced* value if file name contains "forced" (Dendraspis)
+- Add *After Job Failed* event (Dendraspis)
+- Muxer and AOMEnc adjustments to handle all AOMEnc output extensions (Dendraspis, [#669](/../../issues/669))
+- Fix *Create job for each selection* returning a wrong project (Dendraspis, [#676](/../../issues/676))
+- Reload last project after processing jobs (Dendraspis, [#645](/../../issues/645))
+- Fix not themed Menu Template Window (Dendraspis, [#681](/../../issues/681))
+- Change shortcuts for Processing and Jobs windows (Dendraspis)
+- Set initial shutdown timeout of 90s (44vince44)
+- Add Sharpen filter profile for AviSynth/VapourSynth (JKyle)
+- Add CAS filter profile for AviSynth/VapourSynth (JKyle)
+- Add MDegrain3 filter profile for AviSynth (JKyle)
+- Update InterFrame and YFRC filter profiles (44vince44)
+- Update MDegrain2 filter profile (JKyle)
+- Add MVTools 2 missing filters (JKyle)
+- AOMEnc v3.0.0-375-g4d1ace0ad-x64-gcc10.2.0 Patman
+- AutoCrop v2.2
+- chapterEditor v1.28
+- MKVToolNix v56.1.0
+- Mp4Box v1.1.0-DEV-rev802-gc0ea96c7b-x64-gcc10.2.0 Patman
+- NVEnc v5.30
+- Python v3.9.4
+- qaac v2.72
+- rav1e v0.5.0-alpha-(p20210427-1-gf54b23b6)-x64-gcc10.2.0 Patman
+- SVT-AV1 v0.8.6-93-g7cb05bf7 Patman
+- VapourSynth R53
+- VCEEnc v6.10
+- x265 v3.5+10+13-7c9bc0cb14 [Mod-by-Patman]
+- AnimeIVTC v2.381 2021-03-30 mod
+- CAS v1.0.1
+- D2VSource v1.2.3
+- edi_rpow2 v1.0 mod 86
+- FineDehalo v1.1 mod8.79
+- GradFun2DBmod v1.5 2020.06.27 mod
+- HQDN3D v1.0.1
+- JPSDR v3.2.6 (W7 AVX2)
+- L-SMASH-Works 20210423 HolyWu
+- MCTemporalDenoise v1.4.21
+- QTGMC v3.379, by Vit, 2012, 2021 mod by A.SONY
+- xy-VSFilter v3.2.0.806 pfmod
+- Zs_RF_Shared v1.151
+
+
+v2.4.0 (2021-04-09)
+=========================
+
+- [ ] Might break settings from previous version, so starting with new settings is recommended
+- [X] Might break templates and jobs from previous version, so checking or renewing them is recommended
+- [X] Changed menus from earlier versions must be restored, manually adjusted or need a global settings reset in order to see and use them
+- Fix ffmpeg re-mux remuxes only one stream per stream type (Dendraspis, JKyle)
+- Fix old StaxRip Thumbnailer (Dendraspis, [#596](/../../issues/596))
+- Refurbish StaxRip Thumbnailer (Dendraspis, [#596](/../../issues/596))
+- Fix adding hardcoded subtitle not working properly (Dendraspis, [#643](/../../issues/643))
+- Make 'Err' error messages optional via settings (Dendraspis)
+- Remove '/vfw.h' from 'Err' (stax76)
+- Bring Command Line options from *Settings* sub-menu back to top level (Dendraspis)
+- Improve keyboard support in apps dialog (stax76)
+- Remove NVEnc encode modes cbrhq and vbrhq (Dendraspis, [#652](/../../issues/652))
+- Add Auto Film Threshold for D2V files to project options (Dendraspis, [#641](/../../issues/641))
+- Optimize, extend and add new AviSynth filters (44vince44)
+- Typo and consistency fixes (JKyle)
+- Fix AssumeBFF filter selection (JKyle)
+- Removal of MTN Thumbnailer (~60MB unzipped, ~10MB zipped) (Dendraspis)
+- CTMF r5
+- edi_rpow2 v1.0 mod 84
+- finesharp 2020-11-03
+- fmtconv r22
+- fvsfunc 2020-10-11
+- muvsfunc v0.3.0
+- mvtools v23
+- MediaInfo.NET v7.1.0.0
+- MKVToolNix v56.0.0
+- nnedi3_resize16 v3.3
+
+
+v2.3.0 (2021-03-28)
+=========================
+
+- [ ] Might break settings from previous version, so starting with new settings is recommended
+- [ ] Might break templates and jobs from previous version, so checking or renewing them is recommended
+- [X] Changed menus from earlier versions must be restored, manually adjusted or need a global settings reset in order to see and use them
+- Demux dialog attachments checkbox render bug fixed (stax76)
+- Demux dialog has buttons to enable/disable all attachment demuxing (stax76)
+- Fix possible crash when converting subtitles (stax76)
+- Disable *eac3to* preprocessing by default and extend re-muxing with *ffmpeg* to m2ts files (Dendraspis, stax76, JKyle, 44vince44, [#632](/../../issues/632))
+- Fix crash when extracting forced subtitles (Dendraspis, [#634](/../../issues/634))
+- Rearrange settings sections (Dendraspis)
+- Fix ffmpeg not being able to re-mux files with menus (Dendraspis)
+- Fix ffmpeg demux issues (Dendraspis)
+- Add missing parameters to ffmpeg calls (Dendraspis, JKyle, [#636](/../../issues/636))
+- aomenc 3.0.0-205-g0a5da45c7-x64-gcc10.2.0 Patman
+- ffmpeg N 101743-gcad3a5d715-x64-gcc10.2.0 Patman
+- Mp4Box 1.1.0 DEV rev635 g9c51f2274-x64-gcc10.2.0 Patman
+- rav1e 0.5.0 alpha (p20210323-5-ge9efcf35)-x64-gcc10.2.0 Patman
+- SvtAv1EncApp v0.8.6-76-g44486d233-x64-gcc10.2.0 Patman
+- JincResize v2.0.2
+- JPSDR 3.2.4 (Clang W7 AVX version)
+- yadifmod2 v0.2.7
+- VSFilterMod r5.2.4
+
+
+v2.2.0 (2021-03-26)
+=========================
+
+- [X] Might break settings from previous version, so starting with new settings is recommended
+- [X] Might break templates and jobs from previous version, so checking or renewing them is recommended
+- [X] Changed menus from earlier versions must be restored, manually adjusted or need a global settings reset in order to see and use them
+- Start of new versioning (no beta versions anymore, but stripped DEV versions)
+- Check for updates updated to support new versioning (Dendraspis)
+- Fix re-calculation of video bitrate on multi-pass encode and audio encodes (Dendraspis, [#580](/../../issues/580))
+- New projects use Copy/Mux as audio profile (Dendraspis)
+- Fix misleading audio stream delay detection (Dendraspis)
+- Demuxing of video and chapters is set via Options window instead of Preprocessing (Dendraspis)
+- Add option to demux subtitles without including them (Dendraspis, [#622](/../../issues/622))
+- Make Checkboxes grow and shrink with UIScaleFactor (Dendraspis)
+- Fix menu button graphics issue (Dendraspis, [#623](/../../issues/623))
+- New *Check for updates* dialog (Dendraspis)
+- Extended Settings Directory Location Selection at first run from new folder (Dendraspis)
+- Fix crash on app version editing (Dendraspis, [#628](/../../issues/628))
+- MTN Thumbnailer description adjusted (JJKylee)
+- Fixed 'Reset Setting' feature in the Advanced menu (stax76)
+- New task dialog with color theme support (stax76)
+- Clicking an option in the video encoder command line preview navigates directly to the UI control (stax76, [#617](/../../issues/617))
+- New font picking task dialog to choose the console font (stax76)
+- DetailSharpen VapourSynth filter profile added (JJKylee, [#624](/../../issues/624))
+- JPSDR 3.2.5 (Clang W7 AVX version)
+- SangNom2 v0.6.0
+- x265 3.5+9+14-6c69ed37d [Mod by Patman]
+
+
+2.1.9.0 Beta (2021-03-21)
+=========================
+
+- [X] Might break settings from previous version, so starting with new settings is recommended
+- [X] Might break templates and jobs from previous version
+- [X] Changed menus that need a menu reset, manual setting or global settings reset in order to see them
+- Since v2.1.8.5 StaxRip uses the SI prefix for sizes (Base 10: `1 MB = 1000 KB`)  
+  Now it is possible to switch (back) to IEC prefix (Base 2: `1 MiB = 1024 KiB`) in the settings  
+  *Please note, that the target size menu must be resetted or adjusted by hand after a change!* (Dendraspis, 44vince44)
+- Set "Dark | Blue" as default theme (Dendraspis)
+- CheckBox appearance optimized (Dendraspis)
+- CodeEditor does not join "Cutting" filter (Dendraspis)
+- Block size for Compressibility Check can be set in seconds (Dendraspis, [#547](/../../issues/547))
+- The x264 command line preview shows all passes (Dendraspis, [#496](/../../issues/496))
+- The aomenc command line preview shows all passes (Dendraspis, [#496](/../../issues/496))
+- Extended option descrption for 'Temp Files Folder' if Auto-Deletion is enabled (Dendraspis, [#542](/../../issues/542))
+- Progress Reformatting is a global option like Output Highlighting (Dendraspis)
+- Improved usability for subtitle options (stax76, [#577](/../../issues/577))
+- Show target size label including size unit (Dendraspis, VEGAX265, [#580](/../../issues/580))
+- Theme "Default" is renamed to "System Colors" (Dendraspis)
+- Priority for current selected process can be set via menu on Processing window (Dendraspis)
+- Multiple theme related adjustments (Dendraspis, stax76)
+- New shortcuts for ***O**utput Highlighting* and ***P**rogress Reformatting* on Processing window (Dendraspis)
+- New shortcuts for existing actions on Jobs window (stax76)
+- Fix x265 --tskip default value for Placebo preset (tkozybski, Dendraspis, [#600](/../../issues/600))
+- Fix x265 Slower preset default values (tkozybski)
+- Fix x265 params --atc-sei and --pic-struct wrong parameter type (Dendraspis, [#593](/../../issues/593))
+- x264 default CRF value set while setting initial value to 20 (Dendraspis, [#594](/../../issues/594))
+- x264 fix UltraFast preset value sync (Dendraspis, [#594](/../../issues/594))
+- Fix NVEnc VBR Quality value localization (Dendraspis, [#604](/../../issues/604))
+- Fix NVEnc VBR Quality applies even it's disabled (Dendraspis, [#605](/../../issues/605))
+- Removal of Menu Styles (Dendraspis, [#589](/../../issues/589))
+- In quality mode main dialog shows count and type of active subtitles (stax76)
+- Main dialog and code editor show script info with F2 key and
+  advanced script info with Ctrl+F2, requires menus to be reset manually (stax76)
+- New setting to customize the code and console font (stax76)
+- Video encoder context console help was fixed and improved (stax76, [#595](/../../issues/595))
+- Fix audio bitrate calculation for calculation of video bitrate (Dendraspis, 44vince44, [#608](/../../issues/608))
+- When toggling size prefix target size/bitrate are refreshed (Dendraspis)
+- AddGrainC v1.8.3.0
+- AnimeIVTC v2.34 2020-12-19 mod
+- AVSMeter v3.0.8.0
+- chapterEditor v1.27
+- CropResize 2021-02-01
+- MediaInfo.NET v7.0.0.0
+- MP4Box v1.1.0 DEV rev589 gcc10.2.0 Patman
+- MTN Thumbnailer v3.4
+- SangNom2 v0.6.0
+- xy-VSFilter v3.2.0.804
+
+
+2.1.8.5 Beta (2021-03-09)
+=========================
+
+- When a video encoder default value was changed, a compatibility issue
+  with old settings was happening, this is finally fixed, but could only
+  be achieved by resetting all video encoder options (stax76, [#546](/../../issues/546))
+- Fix issue with ffmpeg AAC encoding (stax76, [#548](/../../issues/548))
+- Encoder dialogs allow using 1:1 for --sar (stax76, [#546](/../../issues/546))
+- Introduce Output Highlighting in processing dialog (Dendraspis)
+- Introduce Command Line Highlighting in command line preview (Dendraspis)
+- Add more theme colors (Dendraspis)
+- Fix Menu Item Path not being stored (Dendraspis)
+- Package Name/Version is not displayed when unknown versions are accepted (Dendraspis)
+- Customized progress text adjusted for new x264 Patman builds (Dendraspis)
+- x265 --selective-sao default set to 0 (Dendraspis, [#546](/../../issues/546))
+- x265 --qpmin, --qpmax and --qpstep boundaries set (Dendraspis)
+- x265 ---psy-rd moved from Other to Analysis (Dendraspis)
+- x264 --progress-header disabled for Patman build (Dendraspis)
+- Customized progress text fix for new Patman build (Dendraspis)
+- Fix resize values are not refreshed after changing them (Dendraspis, [#558](/../../issues/558))
+- Adjustments to match the SI prefix (Base 10) for sizes instead of IEC prefixes (Base 2) (Dendraspis)
+- Set minimum bitrate of 32kbps for (E)AC3 (Dendraspis, 44vince44)
+- Fix ffmpeg DD+ encoding issue with high bitrates by adding 0.1 to bitrate (Dendraspis, [#566](/../../issues/566))
+- Add vertical scrollbars to Code Editor code-boxes (Dendraspis, [#567](/../../issues/567))
+- Code Editor does not join Source, Crop, Resize and Rotation filters automatically (Dendraspis)
+- Code Editor can join (in-)active filters only [Don't forget to reset "Edit Menu" in Code Editor!] (Dendraspis)  
+- Code Editor joined filters have the filter name "Misc" (Dendraspis)
+- Custom checkboxes for better theme experience (Dendraspis)
+- Readme.md refreshed (Dendraspis, stax76)
+- Error exit codes are interpreted using Err.exe (stax76)
+- arib-srd-b67 changed to arib-std-b67 in NVEnc, QSVEnc, and VCEEnc (JKyle)
+- Detect forced subtitles by filename _forced and .forced. (case-insensitive) (stax76)
+- The crop dialog allows to define the color used for cropping via menu (stax76)
+- StaxRip passes theme colors to MediaInfo.NET via CLI (stax76)
+- SMDegrain 3.1.2.111s
+- mkvtoolnix 55 (mkvextract Unicode fix)
+- MP4Box 1.1.0 DEV rev542 gcc10.2.0 Patman (AAC 7.1 fix)
+- rav1e 0.5.0-alpha gcc10.2.0 Patman
+- DGMPGDec 2.0.0.5 (large file handling fix)
+- aomenc 2.0.2-1350-msvc1928 Patman
+- x265 3.5_RC1+2+29-gcc10.2.0 Patman Mod
+- x264 0.161.3048+25-gcc10.2.0 Patman Mod
+- ffmpeg N-101392-gcc10.2.0 Patman
+- MediaInfo.NET 6.9.0.0 (gets theme colors from StaxRip via CLI)
+- Err 10.0.17763.1
+
+
+2.1.8.4 Beta (2021-02-25)
+=========================
+
+- Customized progress text support newest x265 3.5 RC1 build by Patman (Dendraspis)
+- QTGMC 3.377
+- Zs_RF_Shared 1.143
+- TIVTC 1.0.26
+- MedianBlur2 1.1
+
+
+2.1.8.3 Beta (2021-02-24)
+=========================
+
+- Introduction of Themes (Dendraspis, testing and appreciated feedback by 44vince44 and JJKylee, [#510](/../../issues/510) & [#518](/../../issues/518))
+- NVEnc UI options move into new Input/Output section (stax76)
+- AVS SMDegrain filter profiles refurbished (44vince44)
+- x265 supports --reader-options library for Patman builds (Dendraspis)
+- If the startup folder contained Turkish i character,
+  QTGMC and any other avsi file failed to load (stax76)
+- x264 10bit, --synth-lib, VapourSynth reader for DJATOM and Patman Mod
+- Docs moved to GitHub Wiki, contributions are welcome! (stax76)
+- x264 0.161.3048+17 gcc10.2 Patman Mod (improved progress display)
+- x265 3.5 RC1+2+23  gcc10.2 Patman Mod (improved progress display)
+- xy-VSFilter 3.2.0.802 (10bit support)
+- Get-MediaInfo 3.6
+
+
+2.1.8.2 Beta (2021-02-21)
+=========================
+
+- New Preview dialog feature 'Create job for each selection' (stax76, [#512](/../../issues/512))
+- Fix crash in Preview dialog using 2 instances and shortcut keys (stax76, [#515](/../../issues/515))
+- NVEnc options have a bitrate option (Dendraspis, [#520](/../../issues/520))
+- Blocking assistant warnings are shown in red with Next button disabled (stax76)
+- On systems prior Windows 10 1903 using ANSI characters, avs2pipemod is now used
+  automatically because DJATOM/Asuna/Patman x265 builds have no working ANSI fallback (stax76)
+- All important tools support AviSynth Unicode and Long Path on Windows 10 1903
+- vspipe patched with Windows 10 Long Path manifest
+- NVEnc 5.29, QSVEnc 4.13, VCEEnc 6.09 (Windows 10 AviSynth Unicode and Long Path)
+- ffmpeg N-101189 gcc10.2.0 Patman (Windows 10 AviSynth Unicode and Long Path)
+- MP4Box 1.1.0 rev506 gcc10.2 Patman
+- Subtitle Edit 3.6.0
+
+
+2.1.8.1 Beta (2021-02-13)
+=========================
+
+- aomenc options rearranged (Dendraspis)
+- aomenc supports chunk encoding (Dendraspis, [#368](/../../issues/368))
+- aomenc gets decoder and pipe settings (Dendraspis, [#497](/../../issues/497))
+- aomenc default value for --kf-max-dist changed to 120 (Dendraspis, 44vince44, [#506](/../../issues/506))
+- aomenc default value for --kf-min-dist changed to 12 (Dendraspis, 44vince44, [#506](/../../issues/506))
+- aomenc sets --verbose by default (Dendraspis, 44vince44, [#506](/../../issues/506))
+- Fix frame rates for AviSynth functions (44vince44)
+- Replace Rapair16 with Dither_Repair16 for AVS (44vince44)
+- Fix AvsResize website address and VS ConvertFormat command (JJKylee)
+- aomenc 2-pass stats file extension change to '.fpf' (Dendraspis)
+- Fix aomenc --webm parameter (Dendraspis)
+- Force mkvmerge to write fps in case of aomenc not using IVF container (Dendraspis)
+- Fix shortcut editor key default causing an issue when m is typed (stax76, [#505](/../../issues/505))
+- x265 UI option for '--progress-readframes' on DJATOM builds (Dendraspis)
+- nvenc 5.28 (Windows 10 long path and AviSynth Unicode support)
+
+
+2.1.8.0 Stable (2021-02-09)
+===========================
+
+- Audio source file bitrate detection fix (stax76)
+- New VideoFilter "ChangeFPS" for AviSynth (Dendraspis, 44vince44, [#499](/../../issues/499))
+- New VideoFilter "Rotation" (Dendraspis)
+- Auto-Rotation feature for supported source files/container (Dendraspis, [#390](/../../issues/390))
+- BAT and PS1 scripts to install and uninstall AviSynth and VapourSynth
+  portable system wide are located at Apps\FrameServer\Install (stax76)
+- New feature to automatically save projects (stax76)
+- New feature to automatically fix bad frame rates (stax76)
+
+
+2.1.7.9 Beta (2021-02-08)
+=========================
+
+- x265 --version output is used in order to detect if it's aMod, Asuna or Vanilla (stax76)
+- Menu in the code editor can be customized and is much faster (stax76, [#494](/../../issues/494))
+
+
+2.1.7.8 Beta (2021-02-06)
+=========================
+
+- Support 10-bit avs input for x264 in case the x264 version name contains the keyword aMod (stax76)
+- AviSynth portable mode no longer uses soft links but moves files if necessary (stax76, [#473](/../../issues/473))
+- For x264 and x265 different code paths are used depending if the version name contains
+  the keywords aMod or Asuna, Vanilla builds are supported as well (stax76)
+
+
+2.1.7.7 Beta (2021-02-05)
+=========================
+
+- VPY files failed to import (stax76, [#486](/../../issues/486))
+- Warning for non spec compliant AC3 bitrate moved to main dialog
+  so it's possible to ignore the warning (stax76, JKyle)
+- avs2pipemod mod with Unicode and Long Path support (stax76)
+- .aac files demuxed with mkvextract are no longer converted to .m4a (stax76, [#489](/../../issues/489))
+- x264 --fade-compensate --log-file --log-file-level --opts --progress-header (stax76)
+- mkvtoolnix 53
+
+
+2.1.7.6 Beta (2021-02-03)
+=========================
+
+- Apps dialog allows custom paths to AviSynth and VapourSynth portable (stax76)
+- Installed AviSynth don't has to be located in System32, it can be installed
+  anywhere using the included install.ps1 powershell script (stax76)
+- NVEnc parameter fixes and option re-organisation (Dendraspis, [#468](/../../issues/468))
+- NVEnc gets '--vpp-warpsharp' options and a Sharpness subsection (Dendraspis)
+- x265 two parameters not set when checkbox unchecked (Dendraspis)
+- Optional customized/shorter progress text while encoding for x264/x265 (Dendraspis)
+- Fix Re-mux TS to MKV via ffmpeg doesn't demux AAC tracks with ADTS (Dendraspis, [#483](/../../issues/483))
+- x264 portable mode uses DJATOM Mod --synth-lib (stax76)
+- x265 portable mode uses DJATOM Mod --reader-options library (stax76)
+- Command line preview uses scrollbar in case > 9 lines (stax76, [#481](/../../issues/481))
+- x265 3.4+70-aMod-gcc10.2.1 DJATOM Mod, avs portable support,
+  vs async frame requests logic overhaul ([#470](/../../issues/470))
+- FFT3dGPU 0.8.6
+- x264 aMod-core161-r3039+17 DJATOM (--synth-lib)
+- nvenc 5.26
+
+
+2.1.7.5 Beta (2021-01-23)
+=========================
+
+- x265 with AviSynth input incorrect command line (stax76, [#475](/../../issues/475))
+
+
+2.1.7.4 Beta (2021-01-23)
+=========================
+
+- Make forced closing optional via settings (Dendraspis)
+- NVEnc gets '--vpp-colorspace' options (Dendraspis, [#461](/../../issues/461))
+- Messagebox when processed file or its project file is not found instead of crash (Dendraspis, [#460](/../../issues/460))
+- x265 vpy input sets --reader-options library=path-to-vsscript.dll (stax76, [#471](/../../issues/471))
+- x265 UI issue fix (stax76, [#472](/../../issues/472))
+- vceenc uses --avsdll in portable mode (stax76, [#473](/../../issues/473))
+- D2VSource 1.2.2
+- x265 3.4+62-aMod-gcc10.2.1-hdr10-info msg7086/DJATOM
+- avsresize r5
+
+
+2.1.7.3 Beta (2021-01-18)
+=========================
+
+- Full AviSynth unicode and full long path support
+  for users of Windows 10 1903, Windows 7 users need to enable
+  avs2pipemod for x265 in order to use foreign (ANSI) characters
+- Show also Source HDR Format on main window (Dendraspis)
+- 3.4+62-aMod-gcc10.2.1+opt msg7086/DJATOM (avs unicode/long path/chunk encoding)
+
+
+2.1.7.2 Beta (2021-01-17)
+=========================
+
+- Using neo functions caused non neo plugins being loaded without reason (stax76, [#250](/../../issues/250))
+- Fix weird behaviour on Audio Settings for qaac (Dendraspis)
+- x265 fixed default value for --hist-threshold (Dendraspis, [#441](/../../issues/441))
+- x265 muxing won't mux chunks from recent encodes (Dendraspis, [#438](/../../issues/438))
+- x265 don't use a pipline for chunks if no pipeline is set (Dendraspis, [#430](/../../issues/430))
+- x265 --seek and --frames also work with chunks (Dendraspis, [#430](/../../issues/430))
+- x265 Pipe option is invisible if decoder is not set to AVS/VPY (Dendraspis)
+- In the portable AviSynth folder there are two PowerShell scripts
+  to install and uninstall AviSynth (stax76)
+- Using ffmpeg as pipe tool with VapourSynth and x264/x265 (Patman86)
+- QT libraries will be found if located at Apps\Audio\qaac, Apps\Audio\qaac\QTfiles64,
+  Download button points to wiki page with install instructions (stax76)
+- Add 'ShowCodePreview' to commands list (Dendraspis, [#444](/../../issues/444))
+- x265 options set chromaloc automatically to 2 if HDR is set to "Yes",
+  to 0 if HDR is disabled or keep it untouched if "Undefined" (Dendraspis, [#319](/../../issues/319))
+- "Import VUI metadata" also imports Chromaloc (Dendraspis, [#319](/../../issues/319))
+- "Import VUI metadata" sets "--hdr10" (Dendraspis)
+- Moved '--high-tier' to 'Basic' page for x265 (Dendraspis)
+- Introduce custom quality definitions for x264 and x265 via Settings > Video (Dendraspis)
+- The x265 command line preview shows both passes for two pass (stax76, [#454](/../../issues/454))
+- MP4Box can import EAC3 (stax76, [#455](/../../issues/455))
+- Processing form remembers its size (stax76)
+- Speed control in rav1e dialog has hint text: 0 = Slowest, 10 = Fastest (stax76)
+- nvenc option --timecode (stax76)
+- x265 UI bug in preset VerySlow showing unnecessarily default values in command line (Dendraspis, stax76)
+- AviSynth 3.7
+- x265 3.4+56 aMod gcc10.2.1 msg7086/DJATOM (VapourSynth reader fixed)
+- MP4Box 1.1.0-rev447-g8c190b551-gcc10.2.0 Patman (Windows 10 long path support added)
+- nvenc 5.25
+- rav1e 0.4.0
+- DgMpgDec 2.0.0.2
+
+
+2.1.7.1 Beta (2021-01-11)
+=========================
+
+- Source information shows the video stream size instead of file size,
+  if not available the file size is shown in brackets (Dendraspis)
+- Neo DFTTest is now also available for AviSynth. (stax76, [#426](/../../issues/426))
+- Main dialog shows actual video width and height. (stax76)
+- Advanced Info feature of Code Editor has new VapourSynth ClipInfo option. (stax76)
+- Fix items can't be removed from or rearranged in lists (Dendraspis, [#433](/../../issues/433))
+- Fix randomly appearing IOException when using x265 with chunks (Dendraspis, [#431](/../../issues/431))
+- Revert current folder of process being set to video temp folder because
+  it locks the folder and also because the .NET Framework allows only
+  260 characters for the working directory of a process. (stax76, [#431](/../../issues/431))
+- nero aac encoder binaries removed. (stax76)
+- On systems with UTF-8 code page invalid d2v and idx files were created. (stax76, [#435](/../../issues/435))
+- Get-MediaInfo shows Range, Primaries, Transfer, Matrix. (stax76)
+- Fix wrong aspect ratio calculation in batch mode. (stax76, [#428](/../../issues/428))
+- Options dialog starts faster. (stax76)
+- WorkingDirectory property of ExecuteCommandLine command supports
+  macro expansion, Windows Terminal menu item uses the video temp
+  folder as current directory. (stax76, JJKylee [#436](/../../issues/436))
+
+
+2.1.7.0 Stable (2021-01-07)
+===========================
+
+- Fixed crash using command line based audio profile. (stax76, [#423](/../../issues/423))
+
+
+2.1.6.1 Beta (2021-01-07)
+=========================
+
+- Fix CLI usage causing version verification to fail. (stax76)
+- RgTools 1.1
+- Neo FFT3D r10
+
+
+2.1.6.0 Stable (2021-01-06)
+===========================
+
+- aomenc bugfixes and UI improvements (Dendraspis, 44vince44, [#375](/../../issues/375))
+- aomenc moved cq-level option to "Rate Control 1" for better usage (Dendraspis, Neltulz, [#411](/../../issues/411))
+- aomenc internal improvements and updates (Dendraspis)
+- aomenc 10-bit input fixed. (stax76, [#420](/../../issues/420))
+- x265 --aq-mode option captions extended (stax76)
+- x265 by default no longer uses a pipe tool because we use
+  a modified x265 build now that supports both AviSynth and VapourSynth
+  directly, people who want to replace it with an ordinary x265 build
+  need to enable piping in the x265 options: Input/Output > Pipe
+- New option using the source file folder as temp file folder. (stax76)
+- Fix issue detecting default subtitle. (stax76, [#362](/../../issues/362))
+- Fix demuxed mkv subtitles not named starting at ID 1. (stax76)
+- Fix eac3to demuxed tracks not named starting at ID 1. (stax76)
+- Preferred subtitles can be defined by ID. (stax76)
+- Preferred audio tracks to demux can be defined by ID. (stax76)
+- Preferred audio and subtitle tracks in Options can be defined per menu. (stax76)
+- mkvtoolnix 52
+
+
+2.1.5.5 Beta (2020-12-30)
+=========================
+
+- Multiple AviSynth.dlls were included due to bug in release script. (stax76, 44vince44 [#407](/../../issues/407))
+- Apple QuickTime library removed.
+- The apps dialog has a feature to copy the path to the clipboard. (stax76)
+- The apps dialog has a feature to edit the user PATH environment variable. (stax76 [#305](/../../issues/305))
+- VapourSynth CAS plugin added (LSFmod dependency).
+- On Windows 10 Unicode for AviSynth is supported even when the default
+  code page is not UTF-8. This currently works for staxrip, mpv.net and x264.
+- aomenc bitrate UI fix (Dendraspis, 44vince44, [#375](/../../issues/375))
+- mpv.net 5.4.8.6
+- x264 M-0.161.3027-4121277-x64-gcc10.2.0 Patman
+- x265 M-3.4+28 gcc10.2.0 Yuuki-Asuna/msg7086/DJATOM/Patman,
+  it supports direct AviSynth and VapourSynth input which can be
+  enabled in the encoder settings: Input/Output > Pipe > None
+
+
+2.1.5.4 Beta (2020-12-27)
+=========================
+
+- Re-include "check also for new beta version" option in settings (Dendraspis)
+- Remove links from changelog when checking for new versions (Dendraspis)
+- Fix issues using multiple preview dialogs. (stax76, [#395](/../../issues/395), [#401](/../../issues/401))
+- New macros %video_encoder_settings% and %app_version:name% (stax76, [#367](/../../issues/367))
+- New command `AddTags` for adding mkv tags. (stax76, [#367](/../../issues/367))
+- aomenc default params updated and some fixes (Dendraspis, 44vince44, [#375](/../../issues/375))
+- A tool can now have multiple download URLs. (stax76, [#400](/../../issues/400))
+- Apps dialog links to a new [x265 wiki page](https://github.com/staxrip/staxrip/wiki/x265). (stax76, [#400](/../../issues/400))
+- aomenc 2.0.1-1118-gbe4ee75fd-x64-msvc1929 Patman
+- ffmpeg N-100448-gab6a56773f-x64-gcc10.2.0 Patman
+- mp4box 1.1.0-DEV-rev384-gf9e004333-x64-gcc10.2.0 Patman
+
+
+2.1.5.3 Beta (2020-12-19)
+=========================
+
+- Stop saving empty log files (Dendraspis)
+- aomenc options reorganized, restructured and refreshed (Dendraspis, Neltulz, [#375](/../../issues/375))
+- Removed 'HDRCore-ToneMapping' because of use of DGTonemap (Dendraspis, JJKylee, 44vince44, [#369](/../../issues/369))
+- aomenc options optimized (Dendraspis, Neltulz, BlueSwordM , [#361](/../../issues/361))
+- aomenc dropdown controls have a properly expanded width. (stax76)
+- Fix rightclick on aomenc options doesn't show help (Dendraspis, [#365](/../../issues/365))
+- Expand 'Restore Profiles' to preserve possible custom profiles (Dendraspis)
+- Fix bug in ListBoxEx with selection after removing items (Dendraspis)
+- Command ExecutePowerShellScript expands macros. (stax76, [#308](/../../issues/308))
+- Fix StaxRip not finding the (installed) VapourSynth (per user) plugin directory, this could
+  lead to an error StaxRip trying to manually load plugins that were already auto loaded. (stax76, [#399](/../../issues/399))
+- Cut settings when created from the code editor preview were not applied. (stax76, [#395](/../../issues/395))
+- L-SMASH-Works 2020-12-16 StvG
+- AviSynth 3.6.2 test6
+- 7zip 19.0
+- aomenc 2.0.0-1117-g7ddc21b28
+
+
+2.1.5.2 Beta (2020-12-15)
+=========================
+
+- StaxRip authors in about page updated. (stax76)
+- Fix progress bar not working for rav1e encoder. (stax76)
+- Tool updates (stax76, hevron)
+- Fix tool auto update crash in case of missing download URL. (stax76)
+- AVSMeter 3.0.7.0
+- D2VSource 1.2.0
+- KNLMeansCL 1.1.1e
+- masktools2 2.2.26
+- mvtools2 2.7.44
+- neo-minideen r10
+- TDeint 1.8
+- TIVTC 1.0.25
+- VSFilterMod 5.2.3
+- DFTTest r7
+- L-Smash-Works 2020-07-28 HolyWu
+- havsfunc r33
+- x264 M-0.161.3018-db0d417-x64-gcc10.2.0
+- ffmpeg N-99558-g00772ef4f7-x64-gcc10.2.0 Patman
+- JPSDR 3.2.4
+- rav1e 2020-12-08
+- Subtitle-Edit 3.5.18
+- aomenc 2.0.0-918-g75a47cc18-gcc10.2.0
+
+
+2.1.5.1 Beta (2020-12-15)
+=========================
+
+- Job processing issue fix (stax76, 44vince44, [#381](/../../issues/381))
+- Audio filename collision fix (stax76, Dendraspis, 44vince44, [#386](/../../issues/386), [#380](/../../issues/380), [#297](/../../issues/297))
+- The apps dialog has a new auto update feature,
+  works for many but not for all tools. (stax76)
+- nvenc new options added (stax76)
+- qsvenc new options added and reorganized (stax76)
+- Removed '--analysis-reuse-level' from x265 options, because deprecated (Dendraspis)
+- Fixed x265 wrong output params in 3-pass mode (Dendraspis, 44vince44, [#391](/../../issues/391))
+- vceenc 6.07
+- qsvenc 4.12
+- ffms2 87bae19 2020-11-23 StvG
+- L-Smash-Source 2020-12-11 StvG
+
+
+2.1.4.9 Beta (2020-12-13)
+=========================
+
+- Set the current directory of the StaxRip process to the working.
+  directory of the current project. (stax76, 44vince44, [#388](/../../issues/388))
+- Video encoders expand macros in custom options. (stax76, 44vince44, [#388](/../../issues/388))
+- Fix audio encoding overwriting original file. (stax76, 44vince44, [#380](/../../issues/380))
+- x265 --min-vbv-fullness --max-vbv-fullness --vbv-live-multi-pass (stax76)
+- ~~x265 multipass order refixed (Dendraspis, [#389](/../../issues/389))~~
+  Added comments in source code to prevent further confusions (Dendraspis, 44vince44)
+- x265 'Custom Nth Pass' added to options (Dendraspis, [#389](/../../issues/389))
+- x265 options order slightly changed (Dendraspis)
+- x265 'Analysis Save' has also a 'Browse File' button (Dendraspis)
+- Fixed x265 multipass order for chunks (Dendraspis)
+- Renamed x264/x265 passes for (n>2)-pass-mode (Dendraspis, 44vince44, [#389](/../../issues/389#issuecomment-743997077))
+- x265 3.4+53-ge4afbd100 2020-11-02 Yuuki/qyot27
+- nvenc 5.22
+- chapterEditor 1.25
+- SVT-AV1 0.8.6
+- MediaInfo.NET 6.8
+- MediaInfo 20.09
+- Get-MediaInfo 3.5
+- mpv.net 5.4.8.5
+
+
+2.1.4.8 Beta (2020-10-07)
+============
+
+- The Apps dialog supports drag & drop for zip/7z files (stax76)
+- Auto update supports mkvtoolnix (stax76)
+- aomenc fixes and improvements (stax76, [#357](/../../issues/357))
+- GUI options for ffmpeg -probesize -analyzeduration (stax76, [#354](/../../issues/354))
+- qaac 2.71 (long path support)
+- chapterEditor 1.24
+- mkvtoolnix 51
+
+
+2.1.4.7 Beta (2020-10-02)
+============
+
+- Fix Audio decoding method *Pipe* causes crash (Dendraspis, #340)
+- Fix parameters when audio converting to AAC with FFmpeg (Dendraspis, Patman86, #341)
+- 8.3 filepath fix
+- Improved Opus encoder (Patman86)
+- Apps dialog has a experimental Auto Update feature (stax76)
+- NeroAAC removal
+- Option to disable MKV subtitle compression (stax76, [#334](/../../issues/334))
+- AddGrainC 1.8.2
+- VCEEnc 6.05
+- L-Smash-Works 2020-07-28
+
+
+2.1.4.6 Beta (2020-09-13)
+============
+
+- Fix eac3to AAC quality mode incorrect bitrate estimation (stax76)
+- Fix error at: Main Menu > Tools > Settings > Source Filters (stax76, #322)
+- ffmpeg fdk-aac has a option and is disabled by default (stax76, #337)
+- Main window focus is supressed after processing in case the last
+  window activation is older than 60 seconds (stax76, #333, #298)
+- fdkaac removed due to non-free license (stax76, [#292](/../../issues/292))
+
+
+2.1.4.5 Beta (2020-09-13)
+============
+
+- New configuration section in log files, displaying template, profile, muxer, ... - can be extended anytime (Dendraspis, #331)
+- eac3to AAC encoding gets correct default quality value and limits (Dendraspis, #328)
+- Fixed x265 Preset default value for LookaheadSlices (Dendraspis, (112e150))
+- Update checker respects runtime architecture (x64/x86) (Dendraspis)
+- MKVToolNix 50 long path support (stax76, #226)
+- The wiki was integrated into the tool help. Anybody can add
+  detailed tool info and access it from StaxRip (stax76, #292, #320)
+- The automatic source filter detection supports detection by format,
+  the defaults were reset and use now L-Smash-Works for VP9 (stax76, #312)
+- Demuxing is skipped if output files already exist, the old recreate behaviour can be restored
+  in the preprocessing settings. If demuxing is canceled then unfinished files are deleted (stax76)
+- Fix L-Smash-Works indexing happening multiple times (stax76)
+- ffms2 0055b2d StvG
+
+
+2.1.4.4 Beta (2020-09-06)
+============
+
+- eac3to demux dialog showed incorrect language default selection (stax76, #318)
+- MP4Box fail to demux OGG chapters (44vince44, #310)
+- MP4Box muxer supports chunks encoded with x265 chunk encoding (stax76, #316)
+- MP4Box 1.0.0-rev211-g71f1d75ea-x64-gcc10.2.0 (Patman86, #310)
+
+
+2.1.4.3 Beta
+============
+
+- ffmpeg uses libfdk_aac as AAC encoder (stax76, #292)
+- Long path support (stax76, #226, experimental)
+- fix Decoder ffmpeg DXVA2 (stax76, #290)
+- ffms2 2.40-RC1
+- MediaInfo.NET 6.6 (long path support)
+- AviSynth+ 3.6.2 test 2 (long path support)
+- VapourSynth R52
+
+
+2.1.4.2 Beta
+============
+
+- Fix incorrect output mod warning shown.
+- Fix incorrect syntax for nvenc/qsvenc --avsdll in avisynth portable mode.
+
+
+2.1.4.1 Beta
+============
+
+- New Presets for NVEnc (P1-P7) added. Reference: https://github.com/rigaya/NVEnc/blob/master/NVEncC_Options.en.md#-u---preset
+- Soft links are only created if needed by the current config,
+  there is now a confirm dialog with shield icon,
+  mpv.net, NVEnc and QSVEnc no longer need soft links.
+- New NVEnc options --multipass --repeat-headers.
+- Fix mux audio profile Extract DTS Core not working for mka files.
+- x264 r3018-db0d417 x86
+- mkvtoolnix 49 x64
+- NVEnc 5.14
+- QSVEnc 4.07
+- VCEEnc 6.02
+- SVT-AV1 0.8.4-26-g0af191de-msvc1926 Patman
+- MP4Box 1.0.0-rev188-g2aa266dfa-gcc10.2.0 Patman
+- qaac 2.69-msvc1926 Patman
+- ffmpeg N-98647-gffa6072fc7-gcc10.2.0 Patman
+- QTGMC 3.368s
+
+
+2.1.3.9 Beta
+============
+
+- Optional mode added to use AviSynth/VapourSynth via VFW.
+- All VC++ x64 binaries from abbodi1406/vcredist added.
+- Danger Zone setting to disable tool verifications.
+- Setting to disable manual plugin loading.
+- Experimental 32 bit support.
+- VapourSynth R51
+- NVEnc 5.13
+
+
+2.1.3.8 Beta
 ============
 
 - mkvtoolnix 48
@@ -8,11 +928,18 @@
 - Include beta versions for update checker and show changelog (Dendraspis)
 - The final assistant tip supports SHIFT key to add the job at the top of the job list and
   CTRL to prevent showing the jobs dialog. Right-click shows a menu. (Dendraspis)
-- allow to open video files with relative paths on the command line (Dendraspis)
+- Allow to open video files with relative paths on the command line (Dendraspis)
 - Create F6 shortcut for Jobs button on Processing dialog (Dendraspis)
 - Create F7 shortcut for Log dialog
 - 4 commands added to open each source type separately (Dendraspis)
 - x265 Presets and Tunes fixes (Dendraspis)
+- The Processing dialog has a feature to skip the currently running job (Dendraspis)
+- Confirmation on exceptions before files/windows are opened (Dendraspis)
+- A new issue template for usage questions was created on the issue tracker and
+  the docs were updated to describe that the issue tracker can be used for usage questions.
+- For ffmpeg h264_nvenc the command line option generated for quality
+  was using -q:v instead of -cq.
+- Pass --demuxer-lavf-format=vapoursynth to mpv.net in case the source is vpy.
 
 
 2.1.3.7 Beta
