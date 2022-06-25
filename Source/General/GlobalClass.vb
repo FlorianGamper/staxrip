@@ -379,8 +379,8 @@ Public Class GlobalClass
             p.VideoEncoder.Muxer.Mux()
 
             Dim cts = New CancellationTokenSource()
-            Dim closingTD As TaskDialog(Of DialogResult)
-            Dim mainFormClosingHandler As FormClosingEventHandler
+            Dim closingTD As TaskDialog(Of DialogResult) = Nothing
+            Dim mainFormClosingHandler As FormClosingEventHandler = Nothing
 
             If p.Thumbnailer Then
                 mainFormClosingHandler = Sub(sender As Object, e As FormClosingEventArgs)
@@ -669,7 +669,7 @@ Public Class GlobalClass
             Exit Sub
         End If
 
-        Dim args As String
+        Dim args = ""
 
         If cliArgs <> "" Then
             args += " " + cliArgs
@@ -693,7 +693,7 @@ Public Class GlobalClass
         End If
 
         script.Synchronize()
-        Dim args As String
+        Dim args = ""
 
         If script.Engine = ScriptEngine.VapourSynth Then
             args += " --demuxer-lavf-format=vapoursynth"
@@ -1681,7 +1681,7 @@ Public Class GlobalClass
     End Sub
 
     Function GetTrim(script As VideoScript) As String
-        Dim ret As String
+        Dim ret = ""
 
         For Each i In p.Ranges
             If ret <> "" Then
